@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 export const metadata: Metadata = {
   title: "VeriLens AI",
   description: "AI-Powered Explainable News Verification Platform",
+  
 };
 
 export default function RootLayout({
