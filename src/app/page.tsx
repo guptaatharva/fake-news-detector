@@ -127,7 +127,7 @@ export default function Home() {
             <Button
               size="lg"
               variant="outline"
-              className="h-14 px-8 text-base text-black border-white/20 hover:bg-white/10 rounded-full transition-all"
+              className="h-14 px-8 text-base text-black border-white/20 hover:bg-white/80 rounded-full transition-all hover:scale-105"
             >
               See How It Works
             </Button>
