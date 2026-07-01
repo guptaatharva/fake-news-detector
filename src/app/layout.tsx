@@ -7,9 +7,9 @@ export const metadata: Metadata = {
   title: "VeriLens AI",
   description: "AI-Powered Explainable News Verification Platform",
   icons: {
-  icon: "/logo.png",
-  shortcut: "/logo.png",
-  apple: "/logo.png",
+  icon: "/assets/favicon.ico",
+  shortcut: "/assets/favicon.ico",
+  apple: "assets/favicon.ico",
 },
   
 };
