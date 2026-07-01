@@ -1,6 +1,13 @@
+"use client";
+
 import Link from "next/link";
+import Image from "next/image";
+import Typewriter from "typewriter-effect";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+
+import logo from "./logo.png";
 
 export default function Home() {
   return (
@@ -8,9 +15,18 @@ export default function Home() {
       {/* Navigation */}
       <nav className="fixed top-0 w-full border-b border-white/10 bg-black/50 backdrop-blur-md z-50">
         <div className="container mx-auto flex h-16 items-center justify-between px-6">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-teal-400 to-blue-500" />
-            <span className="text-xl font-bold tracking-tight">VeriLens</span>
+          <div className="flex items-center gap-3">
+            <Image
+              src={logo}
+              alt="VeriLens Logo"
+              width={42}
+              height={42}
+              priority
+            />
+
+            <span className="text-2xl font-bold tracking-tight">
+              VeriLens
+            </span>
           </div>
 
           <div className="flex items-center gap-4">
@@ -42,18 +58,47 @@ export default function Home() {
             AI-Powered Fact Checking v1.0
           </Badge>
 
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-tight">
-            Verify the truth with <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-blue-500 to-purple-500">
-              Explainable AI.
-            </span>
-          </h1>
+          <div className="min-h-[190px] flex items-center justify-center">
+            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight">
+              <Typewriter
+                options={{
+                  autoStart: true,
+                  loop: false,
+                  delay: 60,
+                  cursor: "|",
+                }}
+                onInit={(typewriter) => {
+                  typewriter
+                    .typeString("Verify the truth with")
+                    .pauseFor(200)
+                    .typeString("<br/>")
+                    .typeString(
+                      '<span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-blue-500 to-purple-500">VeriLens AI.</span>'
+                    )
+                    .start();
+                }}
+              />
+            </h1>
+          </div>
 
-          <p className="text-lg md:text-xl text-gray-400 max-w-2xl mb-10 leading-relaxed">
-            Stop guessing. Instantly analyze news articles, social media posts,
-            and screenshots. Get transparency with source citations,
-            credibility scores, and logical reasoning.
-          </p>
+          <div className="text-lg md:text-xl text-gray-400 max-w-2xl mb-10 leading-relaxed min-h-[120px]">
+  <Typewriter
+    options={{
+      autoStart: true,
+      loop: false,
+      delay: 15,
+      cursor: "",
+    }}
+    onInit={(typewriter) => {
+      typewriter
+        
+        .typeString(
+          "Stop guessing. Instantly analyze news articles, social media posts, and screenshots. Get transparency with source citations, credibility scores, and logical reasoning."
+        )
+        .start();
+    }}
+  />
+</div>
 
           {/* Buttons */}
           <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -70,7 +115,7 @@ export default function Home() {
               <Button
                 size="lg"
                 variant="outline"
-                className="h-14 px-8 text-base border-white/20 hover:bg-white/10 rounded-full transition-all"
+                className="h-14 px-8 text-base text-black border-white/20 hover:bg-white/10 rounded-full transition-all"
               >
                 See How It Works
               </Button>
