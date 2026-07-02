@@ -124,14 +124,14 @@ export default function Home() {
           </Link>
 
           <Link href="/about">
-            <Button
-              size="lg"
-              variant="outline"
-              className="h-14 px-8 text-base text-black border-white/20 hover:bg-white/80 rounded-full transition-all hover:scale-105"
-            >
-              See How It Works
-            </Button>
-          </Link>
+  <Button
+    size="lg"
+    variant="outline"
+    className="h-14 px-8 text-base text-black border-white/20 hover:bg-white/70 rounded-full transition-all hover:scale-105"
+  >
+    See How It Works
+  </Button>
+</Link>
         </div>
 
       </div>
@@ -159,6 +159,7 @@ export default function Home() {
       <div className="container mx-auto px-6 relative z-10">
         <NewsSection />
       </div>
+      
 
     </section>
 
