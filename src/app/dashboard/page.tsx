@@ -33,6 +33,7 @@ interface Claim {
 interface AnalysisResult {
   verdict: 'TRUE' | 'MOSTLY_TRUE' | 'MIXTURE' | 'MOSTLY_FALSE' | 'FALSE' | 'UNVERIFIABLE';
   confidenceScore: number;
+  scoreBreakdown: string;
   summary: string;
   claims: Claim[];
 }
@@ -70,7 +71,7 @@ export default function DashboardPage() {
       const extractData = await extractResponse.json();
       if (!extractResponse.ok) throw new Error(extractData.error || 'Failed to extract claims');
 
-      const claims: string[] = extractData.claims.slice(0, 3);
+      const claims: string[] = extractData.claims.slice(0, 5);
       addLog(`Found ${claims.length} verifiable claims.`);
 
       // Stage 2 & 3: Search and Gather Evidence

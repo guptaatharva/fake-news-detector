@@ -11,12 +11,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No claim provided for searching." }, { status: 400 });
     }
 
-    const searchResults = await SearchService.searchWeb(claim, 4);
+    const [generalResults, socialResults] = await Promise.all([
+      SearchService.searchWeb(claim, 10),
+      SearchService.searchWeb(`${claim} site:twitter.com OR site:x.com OR site:instagram.com OR site:threads.net`, 10)
+    ]);
+    
+    // Combine and deduplicate by link
+    const allResults = [...generalResults, ...socialResults];
+    const uniqueResultsMap = new Map();
+    for (const res of allResults) {
+      if (!uniqueResultsMap.has(res.link)) {
+        uniqueResultsMap.set(res.link, res);
+      }
+    }
+    const searchResults = Array.from(uniqueResultsMap.values());
     
     // Filter results
     const filteredResults = [];
     for (const result of searchResults) {
-      if (filteredResults.length >= 2) break; // Only need 2 independent sources
+      if (filteredResults.length >= 10) break; // Increased to 10 independent sources
       
       // Skip the original URL to prevent circular verification
       if (originalUrl) {

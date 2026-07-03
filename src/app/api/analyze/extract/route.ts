@@ -15,7 +15,7 @@ const nvidia = createOpenAICompatible({
 export const maxDuration = 60; 
 
 const RequestSchema = z.object({
-  url: z.string().url().optional(),
+  url: z.string().optional(),
   text: z.string().optional(),
 }).refine(data => data.url || data.text, {
   message: "Either URL or text must be provided.",
@@ -34,7 +34,11 @@ export async function POST(req: NextRequest) {
 
     if (result.data.url) {
       try {
-        contentToAnalyze = await extractTextFromUrl(result.data.url);
+        let rawUrl = result.data.url.trim();
+        if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
+          rawUrl = 'https://' + rawUrl;
+        }
+        contentToAnalyze = await extractTextFromUrl(rawUrl);
       } catch (error) {
         return NextResponse.json({ error: "Failed to extract content from the provided URL." }, { status: 400 });
       }
@@ -47,12 +51,13 @@ export async function POST(req: NextRequest) {
     const { object: extraction } = await generateObject({
       model: nvidia('meta/llama-3.1-70b-instruct'),
       schema: z.object({
-        claims: z.array(z.string()).describe('Top 3 most important factual claims from the text.')
+        claims: z.array(z.string()).describe('Top 5 most important factual claims from the text.')
       }),
-      prompt: `Extract the top 1 to 3 most important verifiable factual claims from the following text.
+      prompt: `Extract the top 1 to 5 most important verifiable factual claims from the following text.
       
 IMPORTANT INSTRUCTIONS:
 - You must return ONLY raw valid JSON. Do not include markdown formatting like \`\`\`json.
+- Each claim MUST be completely unique and distinct from the others. Do not repeat the same claim or extract highly similar claims.
 - You MUST strictly follow this exact JSON structure:
 {
   "claims": [
