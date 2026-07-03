@@ -8,6 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { motion } from "framer-motion";
+import DashboardHero from "./DashboardHero";
+import VerifyCard from "./VerifyCard";
+import ReadyPanel from "./ReadyPanel";
+import AgentTerminal from "./AgentTerminal";
+import VerdictCard from "./VerdictCard";
+import ClaimsSection from "./ClaimsSection";
 
 interface Evidence {
   sourceUrl?: string;
@@ -168,201 +175,69 @@ export default function DashboardPage() {
     }
   };
 
-  return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Analysis Workspace</h1>
-        <p className="text-muted-foreground text-lg">Verify news articles, claims, or social media posts using AI.</p>
-      </div>
+return (
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
-        {/* Input Section */}
-        <Card className="xl:col-span-5 shadow-sm border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-fit">
-          <CardHeader>
-            <CardTitle className="text-xl">Submit Content</CardTitle>
-            <CardDescription>Enter a URL or paste text to begin verification.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="url" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="url" className="gap-2"><LinkIcon className="h-4 w-4" /> URL</TabsTrigger>
-                <TabsTrigger value="text" className="gap-2"><FileText className="h-4 w-4" /> Text</TabsTrigger>
-              </TabsList>
-              <TabsContent value="url" className="space-y-4 mt-0">
-                <div className="space-y-2">
-                  <Input 
-                    placeholder="https://example.com/news/article" 
-                    type="url" 
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    disabled={isLoading}
-                    className="focus-visible:ring-blue-600"
-                  />
-                  <p className="text-xs text-muted-foreground">Supported: News articles, blogs, factual web pages.</p>
-                </div>
-                <Button 
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-sm" 
-                  onClick={() => handleAnalyze('url')}
-                  disabled={!url || isLoading}
-                >
-                  {isLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Activity className="h-4 w-4 mr-2" />}
-                  Analyze URL
-                </Button>
-              </TabsContent>
-              <TabsContent value="text" className="space-y-4 mt-0">
-                <div className="space-y-2">
-                  <Textarea 
-                    placeholder="Paste the claim or article text here (min 50 characters)..." 
-                    className="min-h-[200px] resize-none focus-visible:ring-blue-600"
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    disabled={isLoading}
-                  />
-                </div>
-                <Button 
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-sm" 
-                  onClick={() => handleAnalyze('text')}
-                  disabled={!text || isLoading || text.length < 50}
-                >
-                  {isLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Activity className="h-4 w-4 mr-2" />}
-                  Analyze Text
-                </Button>
-              </TabsContent>
-            </Tabs>
-            
+<div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+
+    <DashboardHero />
+
+    <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+
+        {/* Input */}
+
+        <div className="xl:col-span-5">
+
+            <VerifyCard
+                url={url}
+                text={text}
+                isLoading={isLoading}
+                setUrl={setUrl}
+                setText={setText}
+                handleAnalyze={handleAnalyze}
+            />
+
             {error && (
-              <div className="mt-6 p-4 rounded-md bg-rose-50 border border-rose-200 text-rose-600 text-sm flex items-start gap-3 animate-in fade-in">
-                <ShieldAlert className="h-5 w-5 mt-0.5 shrink-0" />
-                <p>{error}</p>
-              </div>
+                <div className="mt-6 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-red-400">
+                    {error}
+                </div>
             )}
-          </CardContent>
-        </Card>
 
-        {/* Results Section */}
-        <div className="xl:col-span-7 space-y-6">
-          {!result && !isLoading && !error && (
-            <Card className="h-full min-h-[400px] flex flex-col items-center justify-center p-12 border-dashed shadow-none bg-slate-50/50 dark:bg-slate-900/50 text-center">
-              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/50 text-blue-600 rounded-full flex items-center justify-center mb-4 ring-8 ring-blue-50 dark:ring-blue-950">
-                <ShieldCheck className="h-8 w-8" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Ready to Verify</h3>
-              <p className="text-muted-foreground max-w-md">Our AI engine will analyze the content against trusted sources, break down specific claims, and provide a detailed veracity report.</p>
-            </Card>
-          )}
-
-          {isLoading && (
-            <Card className="h-full min-h-[400px] flex flex-col p-8 shadow-sm border-slate-200 bg-white dark:bg-slate-900">
-              <div className="flex flex-col items-center justify-center mb-6 mt-2">
-                <Loader2 className="h-10 w-10 text-blue-600 animate-spin mb-4" />
-                <h3 className="text-xl font-medium animate-pulse text-slate-800 dark:text-slate-200">
-                  {stage === 'extracting' && 'Extracting core claims from content...'}
-                  {stage === 'searching' && 'Scraping the live web for evidence...'}
-                  {stage === 'synthesizing' && 'Synthesizing final verdict...'}
-                </h3>
-                <div className="w-64 mt-6">
-                  <Progress value={stage === 'extracting' ? 33 : stage === 'searching' ? 66 : 90} className="h-2" />
-                </div>
-              </div>
-              
-              <div className="flex-1 w-full bg-slate-950 rounded-lg p-5 font-mono text-[13px] leading-relaxed overflow-y-auto border border-slate-800 shadow-inner flex flex-col justify-end max-h-[300px]">
-                <div className="space-y-2 mt-auto">
-                  {logs.map((log, i) => (
-                    <div key={i} className="text-emerald-400 opacity-90 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                      <span className="text-slate-600 mr-3">{'>'}</span>{log}
-                    </div>
-                  ))}
-                  <div className="text-emerald-400 animate-pulse mt-2"><span className="text-slate-600 mr-3">{'>'}</span>_</div>
-                </div>
-              </div>
-            </Card>
-          )}
-
-          {result && (
-            <div className="space-y-6 animate-in slide-in-from-bottom-8 duration-500">
-              {/* Overall Verdict Card */}
-              <Card className="overflow-hidden shadow-md border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-                <div className={`p-6 border-b ${getVerdictColor(result.verdict)} flex items-center justify-between`}>
-                  <div className="flex items-center gap-4">
-                    <div className="p-2 bg-white/60 dark:bg-black/20 rounded-full backdrop-blur-sm">
-                      {getVerdictIcon(result.verdict)}
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-wider opacity-80 mb-1">Overall Verdict</p>
-                      <h2 className="text-3xl font-extrabold">{result.verdict.replace('_', ' ')}</h2>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs font-bold uppercase tracking-wider opacity-80 mb-1">Confidence</p>
-                    <div className="text-4xl font-black flex items-baseline justify-end gap-0.5 font-mono">
-                      {result.confidenceScore}<span className="text-xl font-bold opacity-75">%</span>
-                    </div>
-                  </div>
-                </div>
-                <CardContent className="p-6 md:p-8">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-                    <Activity className="h-4 w-4" />
-                    Summary Analysis
-                  </h3>
-                  <p className="text-slate-800 dark:text-slate-200 leading-relaxed text-lg">{result.summary}</p>
-                </CardContent>
-              </Card>
-
-              {/* Claims Breakdown */}
-              <div className="space-y-4">
-                <h3 className="text-xl font-bold flex items-center gap-2 text-slate-900 dark:text-white">
-                  <FileText className="h-5 w-5 text-blue-600" />
-                  Claims Breakdown
-                </h3>
-                {result.claims.map((claim, idx) => (
-                  <Card key={idx} className="shadow-sm border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 transition-all hover:shadow-md">
-                    <div className="p-5 md:p-6">
-                      <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                        <div className={`shrink-0 px-3 py-1.5 rounded-md text-xs font-bold border ${getVerdictColor(claim.verdict)} self-start`}>
-                          {claim.verdict.replace('_', ' ')}
-                        </div>
-                        <div className="space-y-2 flex-1">
-                          <h4 className="font-semibold text-lg leading-snug text-slate-900 dark:text-slate-100">{claim.claimText}</h4>
-                          <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">{claim.explanation}</p>
-                        </div>
-                      </div>
-                      
-                      {claim.evidence && claim.evidence.length > 0 && (
-                        <div className="mt-5 sm:ml-[110px] pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
-                          <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider flex items-center gap-1.5">
-                            <LinkIcon className="h-3 w-3" />
-                            Sources & Evidence
-                          </p>
-                          {claim.evidence.map((ev, eIdx) => (
-                            <div key={eIdx} className="bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-md p-3.5 text-sm">
-                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
-                                <span className="font-semibold text-slate-800 dark:text-slate-200">{ev.title}</span>
-                                <span className={`shrink-0 self-start text-[10px] px-2.5 py-1 rounded-full font-bold tracking-wide ${
-                                  ev.credibility === 'HIGH' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-400' : 
-                                  ev.credibility === 'MEDIUM' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-400' : 
-                                  'bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-400'
-                                }`}>
-                                  {ev.credibility} CREDIBILITY
-                                </span>
-                              </div>
-                              <p className="text-slate-500 dark:text-slate-400 text-sm italic mb-3 border-l-2 border-slate-200 dark:border-slate-700 pl-3">"{ev.snippet}"</p>
-                              {ev.sourceUrl && (
-                                <a href={ev.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline">
-                                  <ExternalLink className="h-3.5 w-3.5 mr-1" /> View Source
-                                </a>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
-      </div>
+
+        {/* Results */}
+
+        <div className="xl:col-span-7 space-y-6">
+
+            {!result && !isLoading && !error && (
+                <ReadyPanel />
+            )}
+
+            {isLoading && (
+                <AgentTerminal
+                    stage={stage}
+                    logs={logs}
+                />
+            )}
+
+            {result && (
+                <div className="space-y-6">
+
+                    <VerdictCard
+                        result={result}
+                    />
+
+                    <ClaimsSection
+                        claims={result.claims}
+                    />
+
+                </div>
+            )}
+
+        </div>
+
     </div>
-  );
+
+</div>
+
+);
 }

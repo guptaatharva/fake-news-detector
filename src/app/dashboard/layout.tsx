@@ -1,6 +1,8 @@
-import Link from 'next/link';
-import { ShieldCheck, LogOut, History, Home } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import Link from "next/link";
+import Image from "next/image";
+import { LogOut, History, Home } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import logo from "../logo.png";
 
 export default function DashboardLayout({
   children,
@@ -8,33 +10,98 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-950">
-      <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-white dark:bg-slate-950/80 backdrop-blur-md px-6 shadow-sm">
-        <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-lg">
-          <ShieldCheck className="h-6 w-6 text-blue-600" />
-          <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">VeriLens AI</span>
-        </Link>
-        <div className="ml-auto flex items-center gap-4">
-          <Link href="/dashboard" className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950 disabled:pointer-events-none disabled:opacity-50 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-50 h-8 px-3 gap-2">
-            <Home className="h-4 w-4" />
-            <span className="hidden sm:inline">Analyze</span>
+    <div className="relative min-h-screen overflow-hidden bg-[#050505] text-white">
+
+      {/* Aurora Glow */}
+      <div className="pointer-events-none absolute inset-0 -z-20 overflow-hidden">
+        <div className="absolute -top-48 left-1/2 h-[900px] w-[900px] -translate-x-1/2 rounded-full bg-teal-500/10 blur-[180px]" />
+
+        <div className="absolute bottom-0 -left-40 h-[650px] w-[650px] rounded-full bg-cyan-500/10 blur-[180px]" />
+
+        <div className="absolute top-40 -right-40 h-[650px] w-[650px] rounded-full bg-blue-500/10 blur-[180px]" />
+      </div>
+
+      {/* Background Grid */}
+      <div
+        className="absolute inset-0 -z-10 opacity-[0.04]"
+        style={{
+          backgroundImage: `
+            linear-gradient(to right,#ffffff 1px,transparent 1px),
+            linear-gradient(to bottom,#ffffff 1px,transparent 1px)
+          `,
+          backgroundSize: "40px 40px",
+        }}
+      />
+
+      {/* Navbar */}
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-black/45 backdrop-blur-xl">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-8">
+
+          {/* Logo */}
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-3 transition hover:opacity-90"
+          >
+            <Image
+              src={logo}
+              alt="VeriLens"
+              width={46}
+              height={46}
+              priority
+            />
+
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">
+                VeriLens
+              </h1>
+
+              <p className="text-xs text-teal-400">
+                AI Fact Checker
+              </p>
+            </div>
           </Link>
-          <Link href="/dashboard/history" className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950 disabled:pointer-events-none disabled:opacity-50 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-50 h-8 px-3 gap-2">
-            <History className="h-4 w-4" />
-            <span className="hidden sm:inline">History</span>
-          </Link>
-          {/* Implement real auth later */}
-          <Link href="/" className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950 disabled:pointer-events-none disabled:opacity-50 border border-slate-200 bg-white hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:hover:bg-slate-800 dark:hover:text-slate-50 h-8 px-3 gap-2 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950 border-rose-200 dark:border-rose-900 ml-2">
-            <LogOut className="h-4 w-4" />
-            <span className="hidden sm:inline">Sign Out</span>
-          </Link>
+
+          {/* Navigation */}
+          <div className="flex items-center gap-4">
+
+            <Link href="/dashboard">
+              <Button
+                variant="ghost"
+                className="rounded-full text-white hover:bg-white/10"
+              >
+                <Home className="mr-2 h-4 w-4" />
+                Analyze
+              </Button>
+            </Link>
+
+            <Link href="/dashboard/history">
+              <Button
+                variant="ghost"
+                className="rounded-full text-white hover:bg-white/10"
+              >
+                <History className="mr-2 h-4 w-4" />
+                History
+              </Button>
+            </Link>
+
+            <div className="h-8 w-px bg-white/10" />
+
+            <Link href="/">
+              <Button className="rounded-full bg-gradient-to-r from-rose-500 to-red-600 px-6 hover:scale-105 transition-all">
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+              </Button>
+            </Link>
+
+          </div>
         </div>
       </header>
-      <main className="flex-1 p-4 sm:p-6 md:p-8 lg:p-12">
-        <div className="mx-auto max-w-6xl">
-          {children}
-        </div>
+
+      {/* Main */}
+      <main className="relative z-10 mx-auto max-w-7xl px-6 py-10 lg:px-8">
+        {children}
       </main>
+
     </div>
   );
 }
