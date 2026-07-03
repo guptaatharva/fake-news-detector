@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
       schema: z.object({
         verdict: z.enum(['TRUE', 'MOSTLY_TRUE', 'MIXTURE', 'MOSTLY_FALSE', 'FALSE', 'UNVERIFIABLE']).describe('The overall verdict of the article.'),
         confidenceScore: z.number().min(0).max(100).describe('Confidence score from 0 to 100 representing how confident you are in the overall verdict.'),
+        scoreBreakdown: z.string().describe('Detailed explanation of how the confidence score was calculated, including supporting factors and deduction reasons.'),
         summary: z.string().describe('A 2-3 sentence summary explaining the overall verdict.'),
         claims: z.array(z.object({
           claimText: z.string().describe('A specific factual claim made in the text.'),
@@ -50,6 +51,7 @@ You MUST strictly follow this exact JSON structure:
 {
   "verdict": "TRUE",
   "confidenceScore": 85,
+  "scoreBreakdown": "The score of 85 was achieved because 2 of the 3 claims were fully verified by high credibility sources, but one claim lacked sufficient evidence, resulting in a 15 point deduction.",
   "summary": "Short explanation of the overall verdict.",
   "claims": [
     {

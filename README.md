@@ -4,20 +4,21 @@ VeriLens is a next-generation, AI-powered news verification platform. It doesn't
 
 ## 🚀 Key Features
 
-* **Agentic RAG Architecture**: A sophisticated multi-stage pipeline that actively cross-references claims against live internet data to prevent AI hallucinations.
-* **Live Web Scraping**: Automatically queries DuckDuckGo for independent sources and uses headless Chromium (Puppeteer) and Mozilla Readability to extract raw article text while bypassing ads and clutter.
-* **NVIDIA NIM Integration**: Powered by the blazing-fast `meta/llama-3.1-70b-instruct` model for enterprise-grade reasoning and strictly formatted JSON verification reports.
-* **Live Agent Terminal UI**: Watch the AI "think". The dashboard features a real-time, hacker-style terminal that logs every step the agent takes (e.g., extracting claims, searching the web, scraping specific URLs, synthesizing verdicts).
+* **Agentic RAG Architecture**: A sophisticated multi-stage pipeline that actively cross-references up to 5 unique claims against live internet data to prevent AI hallucinations.
+* **Social Media & Web Harvesting**: Automatically queries DuckDuckGo for up to 10 independent sources per claim, explicitly hunting for evidence across general news sites and social media platforms (X/Twitter, Instagram, Threads, TikTok).
+* **Deep Web Scraping**: Uses headless Chromium (Puppeteer) and Mozilla Readability to extract raw article text while bypassing ads and clutter.
+* **Transparent Scoring Engine**: The AI provides a detailed `Score Breakdown` explaining exactly why it arrived at its confidence score based on the credibility and volume of the gathered evidence.
+* **Live Agent Terminal UI**: Watch the AI "think". The dashboard features a real-time, hacker-style terminal that logs every step the agent takes (e.g., extracting claims, searching the web, scraping specific URLs).
 * **Anti-Circular Verification**: Built-in domain filtering ensures the AI cannot use the original source article to prove the original source article is true.
 
 ## 🧠 How It Works (The 4-Stage Pipeline)
 
 When you submit a URL or text snippet, VeriLens executes the following atomic steps:
 
-1. **Extraction (`/api/analyze/extract`)**: The LLM reads the submitted content and extracts the top 3 verifiable factual claims.
-2. **Search (`/api/analyze/search-query`)**: The backend searches DuckDuckGo for each claim to find independent, secondary sources.
+1. **Extraction (`/api/analyze/extract`)**: The LLM reads the submitted content and extracts the top 5 distinct, verifiable factual claims.
+2. **Search (`/api/analyze/search-query`)**: The backend runs parallel searches (General Web + Social Media operators) to gather up to 10 independent sources per claim.
 3. **Scrape (`/api/analyze/scrape`)**: The system spins up Puppeteer to physically visit the discovered URLs and extracts the live text from those articles.
-4. **Synthesis (`/api/analyze/synthesize`)**: The LLM evaluates the original claims based **strictly** on the massive block of freshly scraped evidence, assigning a final verdict (`TRUE`, `FALSE`, `MIXTURE`, etc.) and a confidence score.
+4. **Synthesis (`/api/analyze/synthesize`)**: The LLM evaluates the original claims based **strictly** on the freshly scraped evidence, assigning a final verdict, a confidence score, and a detailed score breakdown.
 
 ## 💻 Tech Stack
 

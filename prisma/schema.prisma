@@ -49,15 +49,16 @@ model Session {
 }
 
 model Analysis {
-  id          String   @id @default(cuid())
-  userId      String
-  sourceUrl   String?
-  textContent String?
-  verdict     String
-  confidence  Float
-  summary     String
-  claims      Claim[]
-  createdAt   DateTime @default(now())
+  id             String   @id @default(cuid())
+  userId         String
+  sourceUrl      String?
+  textContent    String?
+  verdict        String
+  confidence     Float
+  scoreBreakdown String?
+  summary        String
+  claims         Claim[]
+  createdAt      DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

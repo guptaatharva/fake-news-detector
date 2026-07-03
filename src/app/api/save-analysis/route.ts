@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
         textContent: textContent || null,
         verdict: result.verdict,
         confidence: result.confidenceScore,
+        scoreBreakdown: result.scoreBreakdown,
         summary: result.summary,
         claims: {
           create: result.claims.map((claim: any) => ({
