@@ -177,6 +177,58 @@ export default function AboutPage() {
         <div className="absolute bottom-0 left-0 w-full h-40 bg-gradient-to-b from-transparent to-black" />
 
       </section>
+
+      {/* ================= DEMO VIDEO ================= */}
+
+<section className="relative py-36 bg-black overflow-hidden">
+
+  {/* Background Glow */}
+
+  <div className="absolute left-1/2 top-0 -translate-x-1/2 w-[700px] h-[700px] bg-cyan-500/10 blur-[180px] rounded-full" />
+
+  <div className="container mx-auto px-8 relative z-10">
+
+    <div className="text-center mb-16">
+
+      <p className="uppercase tracking-[6px] text-cyan-400 text-sm mb-5">
+        Live Demonstration
+      </p>
+
+      <h2 className="text-6xl font-black mb-6">
+        Watch VeriLens In Action
+      </h2>
+
+      <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
+        See how VeriLens extracts claims, searches the web, gathers evidence,
+        and produces transparent AI-powered fact-checking reports in real time.
+      </p>
+
+    </div>
+
+    {/* Video */}
+
+    <div className="max-w-6xl mx-auto">
+
+      <div className="rounded-[32px] overflow-hidden border border-cyan-500/20 bg-[#0b0b0b] shadow-[0_0_60px_rgba(20,184,166,.15)]">
+
+        <video
+          controls
+          poster="/modi.jpg"
+          className="w-full"
+        >
+          <source src="/demo.mp4" type="video/mp4" />
+
+          Your browser does not support the video tag.
+
+        </video>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
       {/* ================= WHY VERILENS ================= */}
 
 <section className="relative bg-black py-32 overflow-hidden">
