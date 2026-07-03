@@ -19,7 +19,7 @@ export async function extractTextFromUrl(url: string): Promise<string> {
     await page.setRequestInterception(true);
     page.on('request', (req) => {
       const resourceType = req.resourceType();
-      if (['image', 'stylesheet', 'media', 'font'].includes(resourceType)) {
+      if (['image', 'media', 'font'].includes(resourceType)) {
         req.abort();
       } else {
         req.continue();
@@ -27,7 +27,11 @@ export async function extractTextFromUrl(url: string): Promise<string> {
     });
 
     // Go to the URL and wait until the network is mostly idle
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+    try {
+      await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+    } catch (e) {
+      console.warn(`page.goto timed out or failed for ${url}, attempting to proceed with loaded content...`);
+    }
     
     // Get the full HTML content
     const html = await page.content();
@@ -39,20 +43,26 @@ export async function extractTextFromUrl(url: string): Promise<string> {
     const reader = new Readability(doc.window.document);
     const article = reader.parse();
     
+    let text = '';
     if (!article || !article.textContent) {
-      throw new Error('Readability failed to extract article text.');
+      console.warn('Readability failed to extract article, falling back to body text.');
+      let bodyText = doc.window.document.body?.textContent || '';
+      if (!bodyText.trim()) {
+        throw new Error('Readability failed and fallback body text is empty.');
+      }
+      text = bodyText;
+    } else {
+      text = article.textContent;
     }
-    
-    let text = article.textContent;
     
     // Clean up whitespace
     text = text.replace(/\s+/g, ' ').trim();
     
     // Return max 15000 characters to avoid huge payloads
     return text.substring(0, 15000);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error extracting text:', error);
-    throw new Error('Failed to extract text from the provided URL.');
+    throw new Error(`Failed to extract text from the provided URL. Details: ${error.message}`);
   } finally {
     if (browser) {
       await browser.close();

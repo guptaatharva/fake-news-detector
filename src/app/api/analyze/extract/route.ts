@@ -39,8 +39,8 @@ export async function POST(req: NextRequest) {
           rawUrl = 'https://' + rawUrl;
         }
         contentToAnalyze = await extractTextFromUrl(rawUrl);
-      } catch (error) {
-        return NextResponse.json({ error: "Failed to extract content from the provided URL." }, { status: 400 });
+      } catch (error: any) {
+        return NextResponse.json({ error: error.message || "Failed to extract content from the provided URL." }, { status: 400 });
       }
     }
 
