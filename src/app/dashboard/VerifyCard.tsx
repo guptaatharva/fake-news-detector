@@ -153,13 +153,13 @@ export default function VerifyCard({
             <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center">
               <ImageIcon className="mx-auto mb-4 h-9 w-9 text-teal-400" />
               <p className="font-medium text-white">Screenshot Upload</p>
-              <p className="mt-2 text-sm text-gray-500">Coming Soon</p>
+              <p className="mt-2 text-m text-white">Coming Soon</p>
             </div>
 
             <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center">
               <FileUp className="mx-auto mb-4 h-9 w-9 text-blue-400" />
               <p className="font-medium text-white">PDF Upload</p>
-              <p className="mt-2 text-sm text-gray-500">Coming Soon</p>
+              <p className="mt-2 text-m text-white">Coming Soon</p>
             </div>
           </div>
         </CardContent>
