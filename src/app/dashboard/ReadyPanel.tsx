@@ -59,7 +59,7 @@ export default function ReadyPanel() {
 
             <p className="mt-5 max-w-2xl text-lg leading-8 text-gray-400">
               Paste a news article or URL to begin a complete AI-powered
-              verification. VeriLens searches the web, gathers evidence,
+              verification. VeraCius searches the web, gathers evidence,
               compares sources and generates a transparent verdict.
             </p>
 

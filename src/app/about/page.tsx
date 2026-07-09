@@ -33,14 +33,14 @@ export default function AboutPage() {
     <Link href="/" className="flex items-center gap-3">
       <Image
         src={logo}
-        alt="VeriLens Logo"
+        alt="VeraCius Logo"
         width={42}
         height={42}
         priority
       />
 
       <span className="text-2xl font-bold tracking-tight">
-        VeriLens
+        VeraCius AI 
       </span>
     </Link>
 
@@ -106,7 +106,7 @@ export default function AboutPage() {
                     .pauseFor(250)
                     .typeString("<br/>")
                     .typeString(
-                      '<span class="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-transparent bg-clip-text">VeriLens AI</span>'
+                      '<span class="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 text-transparent bg-clip-text">VeraCius AI</span>'
                     )
                     .start();
                 }}
@@ -195,11 +195,11 @@ export default function AboutPage() {
       </p>
 
       <h2 className="text-6xl font-black mb-6">
-        Watch VeriLens In Action
+        Watch VeraCius In Action
       </h2>
 
       <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
-        See how VeriLens extracts claims, searches the web, gathers evidence,
+        See how VeraCius extracts claims, searches the web, gathers evidence,
         and produces transparent AI-powered fact-checking reports in real time.
       </p>
 
@@ -229,7 +229,7 @@ export default function AboutPage() {
   </div>
 
 </section>
-      {/* ================= WHY VERILENS ================= */}
+      {/* ================= WHY VeraCius ================= */}
 
 <section className="relative bg-black py-32 overflow-hidden">
 
@@ -246,11 +246,11 @@ export default function AboutPage() {
       </p>
 
       <h2 className="text-6xl font-black mb-6">
-        Why VeriLens?
+        Why VeraCius?
       </h2>
 
       <p className="text-gray-400 text-xl max-w-3xl mx-auto leading-relaxed">
-        We built VeriLens because misinformation spreads faster than facts.
+        We built VeraCius because misinformation spreads faster than facts.
         Instead of asking you to blindly trust AI, we show every step behind
         our reasoning with live evidence, transparent analysis, and explainable
         verdicts.
@@ -340,7 +340,7 @@ export default function AboutPage() {
         </h3>
 
         <p className="text-gray-400 leading-8">
-          Unlike conventional AI, VeriLens gathers live web evidence every time
+          Unlike conventional AI, VeraCius gathers live web evidence every time
           a claim is verified.
         </p>
 
@@ -369,7 +369,7 @@ export default function AboutPage() {
     <div className="text-center mb-24">
 
       <p className="uppercase tracking-[6px] text-cyan-400 text-sm mb-5">
-        How VeriLens Works
+        How VeraCius Works
       </p>
 
       <h2 className="text-6xl font-black mb-6">
@@ -410,7 +410,7 @@ export default function AboutPage() {
             </h3>
 
             <p className="text-gray-400 leading-8">
-              VeriLens reads the submitted article, social media post or URL
+              VeraCius reads the submitted article, social media post or URL
               and extracts the most important factual claims that can be
               independently verified.
             </p>
@@ -461,7 +461,7 @@ export default function AboutPage() {
             </h3>
 
             <p className="text-gray-400 leading-8">
-              VeriLens visits each trusted source, removes advertisements and
+              VeraCius visits each trusted source, removes advertisements and
               extracts only the meaningful article content for analysis.
             </p>
 
@@ -519,11 +519,11 @@ export default function AboutPage() {
       </p>
 
       <h2 className="text-6xl font-black mb-6">
-        Traditional AI vs VeriLens AI
+        Traditional AI vs VeraCius AI
       </h2>
 
       <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-        Most AI assistants answer from memory. VeriLens performs real-time
+        Most AI assistants answer from memory. VeraCius performs real-time
         investigation before answering.
       </p>
 
@@ -612,7 +612,7 @@ export default function AboutPage() {
 
       </div>
 
-      {/* VeriLens */}
+      {/* VeraCius */}
 
       <div className="rounded-[32px] border border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 via-blue-500/5 to-purple-500/10 backdrop-blur-xl p-10 shadow-[0_0_70px_rgba(20,184,166,.12)]">
 
@@ -625,7 +625,7 @@ export default function AboutPage() {
           <div>
 
             <h3 className="text-4xl font-bold">
-              VeriLens AI
+              VeraCius AI
             </h3>
 
             <p className="text-cyan-300 mt-1">

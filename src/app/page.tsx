@@ -21,14 +21,14 @@ export default function Home() {
         <div className="flex items-center gap-3">
           <Image
             src={logo}
-            alt="VeriLens Logo"
+            alt="VeraCius Logo"
             width={42}
             height={42}
             priority
           />
 
           <span className="text-2xl font-bold tracking-tight">
-            VeriLens
+            VeraCius AI
           </span>
         </div>
 
@@ -87,7 +87,7 @@ export default function Home() {
                   .pauseFor(200)
                   .typeString("<br/>")
                   .typeString(
-                    '<span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-blue-500 to-purple-500">VeriLens AI.</span>'
+                    '<span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-blue-500 to-purple-500">VeraCius AI.</span>'
                   )
                   .start();
               }}
