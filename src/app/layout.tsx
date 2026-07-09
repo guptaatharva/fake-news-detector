@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 
 export const metadata: Metadata = {
-  title: "VeriLens AI",
+  title: "VeraCius AI",
   description: "AI-Powered Explainable News Verification Platform",
   icons: {
   icon: "./logo.png",

@@ -44,7 +44,7 @@ export default function DashboardLayout({
           >
             <Image
               src={logo}
-              alt="VeriLens"
+              alt="VeraCius"
               width={46}
               height={46}
               priority
@@ -52,7 +52,7 @@ export default function DashboardLayout({
 
             <div>
               <h1 className="text-2xl font-bold tracking-tight">
-                VeriLens
+                VeraCius AI
               </h1>
 
               <p className="text-xs text-teal-400">

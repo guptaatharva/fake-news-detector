@@ -63,7 +63,7 @@ export default function DashboardHero() {
           </span>{" "}
           and let{" "}
           <span className="bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text font-bold text-transparent">
-            VeriLens AI
+            VeraCius AI
           </span>{" "}
           search the live web, gather trusted evidence,
           compare independent sources and generate an
