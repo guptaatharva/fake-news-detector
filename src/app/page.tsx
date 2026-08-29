@@ -1,168 +1,197 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
-import Typewriter from "typewriter-effect";
-
+import { motion } from "framer-motion";
+import { ArrowRight, ShieldCheck, Search, Globe, Cpu, Sparkles, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import Navbar from "@/components/navigation/Navbar";
+import Footer from "@/components/ui/Footer";
+import SignalsFeed from "@/components/ui/SignalsFeed";
+import LiveVerificationVisual from "@/components/hero/LiveVerificationVisual";
+import InteractiveDemo from "@/components/ui/InteractiveDemo";
+import TrustArchitecture from "@/components/ui/TrustArchitecture";
+import NuancedVerdictGuide from "@/components/ui/NuancedVerdictGuide";
 
-import logo from "./logo.png";
-import NewsSection from "@/components/ui/NewsSection";
+import RevealOnScroll from "@/components/animation/RevealOnScroll";
+import MagneticButton from "@/components/animation/MagneticButton";
 
 export default function Home() {
- return (
-  <div className="min-h-screen bg-black text-white selection:bg-teal-500/30">
+  // Headline word-by-word reveal variants
+  const headlineContainer = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.15,
+        delayChildren: 0.1,
+      },
+    },
+  };
 
-    {/* ================= NAVBAR ================= */}
-    <nav className="fixed top-0 w-full border-b border-white/10 bg-black/50 backdrop-blur-md z-50">
-      <div className="container mx-auto flex h-16 items-center justify-between px-6">
+  const headlineWord = {
+    hidden: { opacity: 0, y: 40, filter: "blur(10px)" },
+    visible: {
+      opacity: 1,
+      y: 0,
+      filter: "blur(0px)",
+      transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
+    },
+  };
 
-        <div className="flex items-center gap-3">
-          <Image
-            src={logo}
-            alt="VeraCius Logo"
-            width={42}
-            height={42}
-            priority
-          />
+  return (
+    <div className="min-h-screen bg-transparent text-foreground flex flex-col font-sans selection:bg-neonRed/30 selection:text-neonRed-bright overflow-x-hidden">
+      {/* ================= HERO SECTION ================= */}
+      <section className="relative pt-36 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
+        {/* Subtle atmospheric red glow behind hero */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-red-glow-bg pointer-events-none" />
 
-          <span className="text-2xl font-bold tracking-tight">
-            VeraCius AI
-          </span>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <Link
-            href="/login"
-            className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
-          >
-            Sign In
-          </Link>
-
-          <Link href="/dashboard">
-            <Button className="bg-white text-black hover:bg-gray-200 rounded-full px-6">
-              Get Started
-            </Button>
-          </Link>
-        </div>
-      </div>
-    </nav>
-
-    {/* ================= HERO ================= */}
-
-    <main
-      className="relative pt-32 pb-28 lg:pt-48 lg:pb-36 overflow-hidden bg-cover bg-center"
-      style={{
-        backgroundImage: "url('/aurora.png')",
-      }}
-    >
-      {/* Dark Overlay */}
-      <div className="absolute inset-0 bg-black/65 z-0"></div>
-
-      {/* Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] bg-teal-500/20 blur-[180px] rounded-full pointer-events-none z-0" />
-
-      <div className="container mx-auto px-6 relative z-10 flex flex-col items-center text-center">
-
-        <Badge
-          variant="outline"
-          className="mb-6 border-white/20 text-teal-300 bg-white/5 backdrop-blur-sm px-4 py-1.5 text-sm"
-        >
-          AI-Powered Fact Checking v1.0
-        </Badge>
-
-        <div className="min-h-[190px] flex items-center justify-center">
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight">
-            <Typewriter
-              options={{
-                autoStart: true,
-                loop: false,
-                delay: 60,
-                cursor: "|",
-              }}
-              onInit={(typewriter) => {
-                typewriter
-                  .typeString("Verify the truth with")
-                  .pauseFor(200)
-                  .typeString("<br/>")
-                  .typeString(
-                    '<span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-blue-500 to-purple-500">VeraCius AI.</span>'
-                  )
-                  .start();
-              }}
-            />
-          </h1>
-        </div>
-
-        <div className="text-lg md:text-xl text-gray-300 max-w-2xl mb-10 leading-relaxed min-h-[120px]">
-          <Typewriter
-            options={{
-              autoStart: true,
-              loop: false,
-              delay: 15,
-              cursor: "",
-            }}
-            onInit={(typewriter) => {
-              typewriter
-                .typeString(
-                  "Stop guessing. Instantly analyze news articles, social media posts, and screenshots. Get transparency with source citations, credibility scores, and logical reasoning."
-                )
-                .start();
-            }}
-          />
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          <Link href="/dashboard">
-            <Button
-              size="lg"
-              className="h-14 px-8 text-base bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-400 hover:to-blue-500 rounded-full text-white shadow-[0_0_40px_rgba(20,184,166,0.3)] hover:scale-105 transition-all"
+        <div className="mx-auto max-w-7xl px-6 lg:px-8 relative z-10">
+          <div className="text-center max-w-4xl mx-auto space-y-6">
+            {/* Step 1: Eyebrow Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-graphite-surface border border-graphite-border-sec shadow-[0_0_15px_rgba(255,23,68,0.12)]"
             >
-              Start Verifying Free
-            </Button>
-          </Link>
+              <Sparkles className="h-4 w-4 text-neonRed animate-pulse" />
+              <span className="font-mono text-xs tracking-widest text-muted-foreground uppercase font-semibold">
+                AI-POWERED INFORMATION VERIFICATION
+              </span>
+            </motion.div>
 
-          <Link href="/about">
-  <Button
-    size="lg"
-    variant="outline"
-    className="h-14 px-8 text-base text-black border-white/20 hover:bg-white/70 rounded-full transition-all hover:scale-105"
-  >
-    See How It Works
-  </Button>
-</Link>
+            {/* Step 2: Headline Word-by-Word Reveal */}
+            <motion.h1
+              variants={headlineContainer}
+              initial="hidden"
+              animate="visible"
+              className="font-display text-5xl sm:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[1.05]"
+            >
+              <motion.span
+                variants={headlineWord}
+                className="inline-block bg-gradient-to-r from-[#FF1744] via-[#FF4D6D] to-[#FF1744] bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(255,23,68,0.25)]"
+              >
+                VERIFY
+              </motion.span>{" "}
+              <motion.span variants={headlineWord} className="inline-block">
+                WHAT
+              </motion.span>
+              <br />
+              <motion.span variants={headlineWord} className="inline-block">
+                MATTERS.
+              </motion.span>
+            </motion.h1>
+
+            {/* Step 3: Supporting Paragraph */}
+            <motion.p
+              initial={{ opacity: 0, y: 25, filter: "blur(6px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed"
+            >
+              VeraCius AI analyzes claims, articles, and online sources to uncover evidence and help you understand what deserves your trust.
+            </motion.p>
+
+            {/* Step 4: Magnetic CTA Buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 25 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
+            >
+              <MagneticButton>
+                <Link href="/dashboard">
+                  <Button className="h-14 px-8 rounded-full text-base font-semibold bg-gradient-to-r from-neonRed to-neonRed-deep hover:from-neonRed-bright hover:to-neonRed text-foreground shadow-red-glow transition-all duration-300 hover:scale-105 border border-neonRed-bright/30 flex items-center gap-3 animate-shimmer">
+                    <span>Start Verification</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </MagneticButton>
+
+              <Link href="/about">
+                <Button
+                  variant="outline"
+                  className="h-14 px-8 rounded-full text-base font-semibold bg-graphite-surface hover:bg-graphite-elevated hover:border-neonRed/50 hover:shadow-[0_0_15px_rgba(255,23,68,0.2)] text-foreground border-graphite-border-sec hover:border-neonRed transition-all duration-300 hover:scale-105"
+                >
+                  Explore How It Works
+                </Button>
+              </Link>
+            </motion.div>
+          </div>
+
+          {/* Step 5: Interactive Hero Visual */}
+          <motion.div
+            initial={{ opacity: 0, y: 40, filter: "blur(8px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+            className="mt-16"
+          >
+            <LiveVerificationVisual />
+          </motion.div>
         </div>
+      </section>
 
-      </div>
-      {/* Bottom Fade */}
-<div className="absolute bottom-0 left-0 w-full h-48 bg-gradient-to-b from-transparent via-black/40 to-[#050505] pointer-events-none z-20" />
-    </main>
+      {/* ================= INTERACTIVE DEMO ================= */}
+      <section className="relative border-t border-graphite-border bg-transparent">
+        <InteractiveDemo />
+      </section>
 
-    {/* ================= NEWS SECTION ================= */}
+      {/* ================= TRUST ARCHITECTURE ================= */}
+      <section className="relative border-t border-graphite-border bg-transparent">
+        <TrustArchitecture />
+      </section>
 
-    <section className="relative bg-[#050505] pt-8 pb-24 overflow-hidden">
+      {/* ================= NUANCED VERDICTS ================= */}
+      <section className="relative bg-transparent overflow-hidden">
+        {/* Smooth dark red/black gradient transition at the top and bottom */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-accent/5 to-background pointer-events-none z-0" />
+        
+        {/* Ambient red glow matching the rest of the site */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-red-glow-bg opacity-50 pointer-events-none z-0" />
+        
+        {/* Subtle tech grid fading smoothly at the top and bottom edges */}
+        <div className="absolute inset-0 bg-tech-grid opacity-20 pointer-events-none [mask-image:linear-gradient(to_bottom,transparent,black_15%,black_85%,transparent)] z-0" />
+        
+        <NuancedVerdictGuide />
+      </section>
 
-      {/* Neon Glow */}
-      <div className="absolute inset-0 pointer-events-none">
-    <div
-      className="absolute left-1/2 top-0
-      -translate-x-1/2
-      w-[1400px]
-      h-[600px]
-      rounded-full
-      bg-teal-500/8
-      blur-[250px]"
-    />
-  </div>
+      {/* ================= SIGNALS NEWS FEED ================= */}
+      <section className="relative py-28 border-t border-graphite-border bg-transparent">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <SignalsFeed />
+        </div>
+      </section>
 
-      <div className="container mx-auto px-6 relative z-10">
-        <NewsSection />
-      </div>
-      
+      {/* ================= FINAL CTA ================= */}
+      <section className="relative py-28 border-t border-graphite-border bg-transparent overflow-hidden">
+        <RevealOnScroll className="mx-auto max-w-5xl px-6 text-center space-y-8 relative z-10">
+          <div className="inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-graphite-elevated border border-graphite-border shadow-red-glow mx-auto">
+            <ShieldCheck className="h-8 w-8 text-neonRed" />
+          </div>
 
-    </section>
+          <h2 className="font-display text-4xl sm:text-6xl font-extrabold tracking-tight text-foreground">
+            Ready to Verify Information?
+          </h2>
 
-  </div>
-);
+          <p className="text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
+            Experience real-time AI fact-checking backed by live web evidence and transparent source attribution.
+          </p>
+
+          <div className="pt-4">
+            <MagneticButton>
+              <Link href="/dashboard">
+                <Button className="h-16 px-10 rounded-full text-base font-semibold bg-gradient-to-r from-neonRed to-neonRed-deep text-foreground shadow-red-glow transition-all duration-300 hover:scale-105 border border-neonRed-bright/30 inline-flex items-center gap-3 animate-shimmer">
+                  <span>Launch Verification Workspace</span>
+                  <ArrowRight className="h-5 w-5" />
+                </Button>
+              </Link>
+            </MagneticButton>
+          </div>
+        </RevealOnScroll>
+      </section>
+
+      {/* Footer */}
+      <Footer />
+    </div>
+  );
 }

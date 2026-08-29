@@ -43,11 +43,59 @@ const config: Config = {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
         },
+        // Legacy VeraCius Black + Neon Red Theme System (Mapped to standard variables)
+        graphite: {
+          bg: "hsl(var(--background))",
+          sub: "hsl(var(--secondary))",
+          surface: "hsl(var(--card))",
+          elevated: "hsl(var(--card))",
+          panel: "hsl(var(--card))",
+          border: "hsl(var(--border))",
+          "border-sec": "hsl(var(--border))",
+          "border-bright": "hsl(var(--accent))",
+        },
+        neonRed: {
+          DEFAULT: "hsl(var(--accent))",
+          secondary: "hsl(var(--accent))",
+          bright: "hsl(var(--accent))",
+          deep: "hsl(var(--accent))",
+          dark: "hsl(var(--accent))",
+          label: "hsl(var(--accent))",
+          mono: "hsl(var(--accent))",
+        },
+        verificator: {
+          verified: "#34D399",
+          warning: "#FBBF24",
+          false: "#FF1744",
+        },
+      },
+      fontFamily: {
+        sans: ["var(--font-inter)", "sans-serif"],
+        display: ["var(--font-space-grotesk)", "sans-serif"],
+        mono: ["var(--font-jetbrains-mono)", "monospace"],
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        '2xl': '16px',
+        '3xl': '24px',
+        '4xl': '32px',
+      },
+      boxShadow: {
+        'red-glow': '0 0 30px rgba(255, 23, 68, 0.30)',
+        'red-focus': '0 0 20px rgba(255, 23, 68, 0.15)',
+        'card-glow': '0 0 25px rgba(255, 23, 68, 0.10)',
+        'verified-glow': '0 0 35px -5px rgba(52, 211, 153, 0.25)',
+      },
+      animation: {
+        'pulse-glow': 'pulseGlow 4s ease-in-out infinite',
+      },
+      keyframes: {
+        pulseGlow: {
+          '0%, 100%': { opacity: '0.4', transform: 'scale(1)' },
+          '50%': { opacity: '0.8', transform: 'scale(1.05)' },
+        },
       },
     },
   },
@@ -55,3 +103,5 @@ const config: Config = {
 };
 
 export default config;
+
+
