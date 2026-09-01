@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { ShieldCheck, Search, Globe, BadgeCheck, Cpu, BrainCircuit } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import Navbar from "@/components/navigation/Navbar";
 import Footer from "@/components/ui/Footer";
 import RevealOnScroll from "@/components/animation/RevealOnScroll";
@@ -90,10 +91,14 @@ export default function AboutPage() {
 
           <div className="pt-4 flex justify-center gap-4">
             <MagneticButton>
-              <Link href="/dashboard">
-                <Button className="h-14 px-8 rounded-full text-base font-semibold bg-gradient-to-r from-neonRed to-neonRed-deep text-foreground shadow-red-glow border border-neonRed-bright/30 animate-shimmer">
-                  Launch Verification Workspace
-                </Button>
+              <Link 
+                href="/dashboard"
+                className={cn(
+                  buttonVariants({ variant: "default" }),
+                  "h-14 px-8 rounded-full text-base font-semibold bg-gradient-to-r from-neonRed to-neonRed-deep text-foreground shadow-red-glow border border-neonRed-bright/30 animate-shimmer"
+                )}
+              >
+                Launch Verification Workspace
               </Link>
             </MagneticButton>
           </div>
