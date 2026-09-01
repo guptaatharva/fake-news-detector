@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, ShieldCheck, Search, Globe, Cpu, Sparkles, Activity } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import Navbar from "@/components/navigation/Navbar";
 import Footer from "@/components/ui/Footer";
 import SignalsFeed from "@/components/ui/SignalsFeed";
@@ -100,21 +101,26 @@ export default function Home() {
               className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
             >
               <MagneticButton>
-                <Link href="/dashboard">
-                  <Button className="h-14 px-8 rounded-full text-base font-semibold bg-gradient-to-r from-neonRed to-neonRed-deep hover:from-neonRed-bright hover:to-neonRed text-foreground shadow-red-glow transition-all duration-300 hover:scale-105 border border-neonRed-bright/30 flex items-center gap-3 animate-shimmer">
-                    <span>Start Verification</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
+                <Link 
+                  href="/dashboard"
+                  className={cn(
+                    buttonVariants({ variant: "default" }),
+                    "h-14 px-8 rounded-full text-base font-semibold bg-gradient-to-r from-neonRed to-neonRed-deep hover:from-neonRed-bright hover:to-neonRed text-foreground shadow-red-glow transition-all duration-300 hover:scale-105 border border-neonRed-bright/30 flex items-center gap-3 animate-shimmer"
+                  )}
+                >
+                  <span>Start Verification</span>
+                  <ArrowRight className="h-4 w-4" />
                 </Link>
               </MagneticButton>
 
-              <Link href="/about">
-                <Button
-                  variant="outline"
-                  className="h-14 px-8 rounded-full text-base font-semibold bg-graphite-surface hover:bg-graphite-elevated hover:border-neonRed/50 hover:shadow-[0_0_15px_rgba(255,23,68,0.2)] text-foreground border-graphite-border-sec hover:border-neonRed transition-all duration-300 hover:scale-105"
-                >
-                  Explore How It Works
-                </Button>
+              <Link 
+                href="/about"
+                className={cn(
+                  buttonVariants({ variant: "outline" }),
+                  "h-14 px-8 rounded-full text-base font-semibold bg-graphite-surface hover:bg-graphite-elevated hover:border-neonRed/50 hover:shadow-[0_0_15px_rgba(255,23,68,0.2)] text-foreground border-graphite-border-sec hover:border-neonRed transition-all duration-300 hover:scale-105"
+                )}
+              >
+                Explore How It Works
               </Link>
             </motion.div>
           </div>
@@ -179,11 +185,15 @@ export default function Home() {
 
           <div className="pt-4">
             <MagneticButton>
-              <Link href="/dashboard">
-                <Button className="h-16 px-10 rounded-full text-base font-semibold bg-gradient-to-r from-neonRed to-neonRed-deep text-foreground shadow-red-glow transition-all duration-300 hover:scale-105 border border-neonRed-bright/30 inline-flex items-center gap-3 animate-shimmer">
-                  <span>Launch Verification Workspace</span>
-                  <ArrowRight className="h-5 w-5" />
-                </Button>
+              <Link 
+                href="/dashboard"
+                className={cn(
+                  buttonVariants({ variant: "default" }),
+                  "h-16 px-10 rounded-full text-base font-semibold bg-gradient-to-r from-neonRed to-neonRed-deep text-foreground shadow-red-glow transition-all duration-300 hover:scale-105 border border-neonRed-bright/30 inline-flex items-center gap-3 animate-shimmer"
+                )}
+              >
+                <span>Launch Verification Workspace</span>
+                <ArrowRight className="h-5 w-5" />
               </Link>
             </MagneticButton>
           </div>

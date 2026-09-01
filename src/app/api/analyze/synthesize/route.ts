@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { object } = await generateObject({
-      model: nvidia('meta/llama-3.1-70b-instruct'),
+      model: nvidia('nvidia/llama-3.1-nemotron-70b-instruct'),
       schema: z.object({
         verdict: z.enum(['TRUE', 'MOSTLY_TRUE', 'MIXTURE', 'MOSTLY_FALSE', 'FALSE', 'UNVERIFIABLE']).describe('The overall verdict of the article.'),
         confidenceScore: z.number().min(0).max(100).describe('Confidence score from 0 to 100 representing how confident you are in the overall verdict.'),
@@ -66,9 +66,10 @@ You MUST strictly follow this exact JSON structure:
           "credibility": "HIGH"
         }
       ]
-    }
   ]
 }
+
+ENSURE you close all brackets and braces. Your response MUST end with a closing brace "}".
 
 Text to analyze:
 ${originalText}
@@ -78,8 +79,31 @@ ${evidenceContext}`,
     });
 
     return NextResponse.json(object);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error during synthesis:', error);
-    return NextResponse.json({ error: 'An error occurred during synthesis.' }, { status: 500 });
+    
+    let status = 500;
+    let message = 'An error occurred during synthesis.';
+
+    if (error && typeof error === 'object') {
+      const actualError = error.lastError || error;
+      const statusCode = actualError.statusCode || actualError.status;
+      if (statusCode) {
+        status = statusCode;
+        if (statusCode === 401) message = "NVIDIA API authentication failed. Please verify API key.";
+        else if (statusCode === 404) message = "The requested AI model was not found.";
+        else if (statusCode === 410) message = "The requested AI model has been retired (410 Gone).";
+        else if (statusCode === 429) message = "NVIDIA API rate limit exceeded. Please try again later.";
+        else if (statusCode === 500) message = "NVIDIA API experienced an internal server error.";
+        else message = `NVIDIA API encountered an error (${statusCode}).`;
+      } else if (actualError.name?.includes('Timeout') || actualError.message?.toLowerCase().includes('timeout')) {
+        status = 504;
+        message = "The AI request timed out. Please try again.";
+      } else if (actualError.name?.includes('ValidationError') || actualError.name?.includes('ParseError') || actualError.name?.includes('NoObjectGeneratedError')) {
+        message = "The AI model returned an invalid response format.";
+      }
+    }
+
+    return NextResponse.json({ error: message }, { status });
   }
 }

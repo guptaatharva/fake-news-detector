@@ -48,7 +48,7 @@ export async function extractTextFromUrl(url: string): Promise<string> {
       console.warn('Readability failed to extract article, falling back to body text.');
       let bodyText = doc.window.document.body?.textContent || '';
       if (!bodyText.trim()) {
-        throw new Error('Readability failed and fallback body text is empty.');
+        throw new Error('Could not find any readable text on the page.');
       }
       text = bodyText;
     } else {
@@ -62,7 +62,7 @@ export async function extractTextFromUrl(url: string): Promise<string> {
     return text.substring(0, 15000);
   } catch (error: any) {
     console.error('Error extracting text:', error);
-    throw new Error(`Failed to extract text from the provided URL. Details: ${error.message}`);
+    throw new Error('Unable to extract content from this URL. The page may be blocked, require a login, or no longer exist.');
   } finally {
     if (browser) {
       await browser.close();

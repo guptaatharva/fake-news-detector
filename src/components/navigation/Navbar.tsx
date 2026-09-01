@@ -6,7 +6,8 @@ import { usePathname } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import MagneticButton from "@/components/animation/MagneticButton";
 import SystemStatus from "@/components/ui/SystemStatus";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -117,11 +118,15 @@ export default function Navbar() {
         >
           <ThemeToggle />
           <MagneticButton>
-            <Link href="/dashboard">
-              <Button className="h-11 px-6 rounded-full text-xs font-mono tracking-wider uppercase font-bold bg-gradient-to-r from-neonRed to-neonRed-deep hover:from-neonRed-bright hover:to-neonRed text-foreground shadow-red-glow border border-neonRed-bright/30 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-2 animate-shimmer">
-                <span>Analyze Information</span>
-                <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
-              </Button>
+            <Link 
+              href="/dashboard" 
+              className={cn(
+                buttonVariants({ variant: "default" }),
+                "h-11 px-6 rounded-full text-xs font-mono tracking-wider uppercase font-bold bg-gradient-to-r from-neonRed to-neonRed-deep hover:from-neonRed-bright hover:to-neonRed text-foreground shadow-red-glow border border-neonRed-bright/30 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-2 animate-shimmer"
+              )}
+            >
+              <span>Analyze Information</span>
+              <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
             </Link>
           </MagneticButton>
         </motion.div>
