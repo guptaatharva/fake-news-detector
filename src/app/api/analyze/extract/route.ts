@@ -1,15 +1,11 @@
-import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import { extractTextFromUrl } from '@/lib/extractor';
 import { NextRequest, NextResponse } from 'next/server';
 
-const nvidia = createOpenAICompatible({
-  name: 'nvidia',
-  baseURL: 'https://integrate.api.nvidia.com/v1',
-  headers: {
-    Authorization: `Bearer ${process.env.NVIDIA_API_KEY}`,
-  },
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GEMINI_API_KEY,
 });
 
 export const maxDuration = 60; 
@@ -49,7 +45,12 @@ export async function POST(req: NextRequest) {
     }
 
     const { object: extraction } = await generateObject({
-      model: nvidia('nvidia/llama-3.1-nemotron-70b-instruct'),
+      model: google('gemini-3.7-flash'),
+      providerOptions: {
+        google: {
+          thinkingLevel: 'medium'
+        }
+      },
       schema: z.object({
         claims: z.array(z.string()).describe('Top 5 most important factual claims from the text.')
       }),
@@ -82,12 +83,13 @@ IMPORTANT INSTRUCTIONS:
       const statusCode = actualError.statusCode || actualError.status;
       if (statusCode) {
         status = statusCode;
-        if (statusCode === 401) message = "NVIDIA API authentication failed. Please verify API key.";
-        else if (statusCode === 404) message = "The requested AI model was not found.";
-        else if (statusCode === 410) message = "The requested AI model has been retired (410 Gone).";
-        else if (statusCode === 429) message = "NVIDIA API rate limit exceeded. Please try again later.";
-        else if (statusCode === 500) message = "NVIDIA API experienced an internal server error.";
-        else message = `NVIDIA API encountered an error (${statusCode}).`;
+        if (statusCode === 401) message = "Gemini API authentication failed. Please verify API key.";
+        else if (statusCode === 403) message = "Gemini API permission denied. Please verify configuration.";
+        else if (statusCode === 404) message = "The requested Gemini model was not found.";
+        else if (statusCode === 410) message = "The requested Gemini model has been retired (410 Gone).";
+        else if (statusCode === 429) message = "Gemini API rate limit exceeded. Please try again later.";
+        else if (statusCode === 500) message = "Gemini API experienced an internal server error.";
+        else message = `Gemini API encountered an error (${statusCode}).`;
       } else if (actualError.name?.includes('Timeout') || actualError.message?.toLowerCase().includes('timeout')) {
         status = 504;
         message = "The AI request timed out. Please try again.";
