@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@ai-sdk/google": "^0.0.10",
+    "@ai-sdk/google": "^4.0.62",
     "@ai-sdk/openai": "^4.0.2",
     "@ai-sdk/openai-compatible": "^3.0.1",
     "@base-ui/react": "^1.6.0",
@@ -17,7 +17,7 @@
     "@prisma/client": "^5.22.0",
     "@radix-ui/react-slot": "^1.1.0",
     "@types/jsdom": "^28.0.3",
-    "ai": "^7.0.4",
+    "ai": "^7.0.90",
     "cheerio": "^1.0.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
