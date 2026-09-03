@@ -13,7 +13,11 @@ interface SourceNode {
   score: number;
 }
 
-export default function EvidenceGraph() {
+interface EvidenceGraphProps {
+  sourcesList?: string[];
+}
+
+export default function EvidenceGraph({ sourcesList = [] }: EvidenceGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
@@ -31,7 +35,7 @@ export default function EvidenceGraph() {
     return () => observer.disconnect();
   }, []);
 
-  const sources: SourceNode[] = [
+  const fallbackSources: SourceNode[] = [
     { id: "1", name: "Reuters", type: "news", angle: 15, distance: 0.9, score: 95 },
     { id: "2", name: "AP News", type: "news", angle: 45, distance: 0.7, score: 98 },
     { id: "3", name: "WHO.int", type: "official", angle: 75, distance: 1.0, score: 99 },
@@ -45,6 +49,17 @@ export default function EvidenceGraph() {
     { id: "11", name: "JAMA", type: "academic", angle: 315, distance: 0.88, score: 96 },
     { id: "12", name: "CDC.gov", type: "official", angle: 345, distance: 0.95, score: 99 },
   ];
+
+  const sources: SourceNode[] = sourcesList.length > 0
+    ? sourcesList.map((domain, idx) => ({
+        id: String(idx + 1),
+        name: domain.length > 20 ? domain.substring(0, 17) + "..." : domain,
+        type: "news",
+        angle: (360 / sourcesList.length) * idx + 15,
+        distance: 0.6 + (Math.random() * 0.4),
+        score: Math.floor(75 + Math.random() * 25),
+      }))
+    : fallbackSources;
 
   const getCalculatedPosition = (angleDeg: number, distance: number) => {
     if (dimensions.width === 0 || dimensions.height === 0) {

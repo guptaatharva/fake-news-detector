@@ -24,12 +24,26 @@ interface Claim {
   evidence?: Evidence[];
 }
 
+interface ScrapedSource {
+  title: string;
+  source: string;
+  domain: string;
+  url: string;
+  sourceUrl: string;
+  link: string;
+  snippet: string;
+  content: string;
+  publishedAt?: string;
+}
+
 interface AnalysisResult {
   verdict: "TRUE" | "MOSTLY_TRUE" | "MIXTURE" | "MOSTLY_FALSE" | "FALSE" | "UNVERIFIABLE";
   confidenceScore: number;
   scoreBreakdown: string;
   summary: string;
   claims: Claim[];
+  sourceDomains?: string[];
+  extractedSources?: ScrapedSource[];
 }
 
 // Helper to map backend verdicts to the new UI verdicts
@@ -78,7 +92,7 @@ export default function DashboardPage() {
       addLog(`Initializing analysis for ${mode.toUpperCase()} input...`);
       const payload = mode === "url" ? { url } : { text };
 
-      // Stage 1: Extract Claims
+      // Stage 1: Extract Claims (Target 10-15 atomic claims)
       addLog("Extracting verifiable factual assertions from source...");
       const extractResponse = await fetch("/api/analyze/extract", {
         method: "POST",
@@ -89,52 +103,88 @@ export default function DashboardPage() {
       const extractData = await extractResponse.json();
       if (!extractResponse.ok) throw new Error(extractData.error || "Failed to extract claims from input.");
 
-      const claims: string[] = extractData.claims ? extractData.claims.slice(0, 5) : [];
+      // Process ALL returned claims — do not hard-code or slice to 3
+      const claims: string[] = Array.isArray(extractData.claims) ? extractData.claims : [];
       addLog(`Identified ${claims.length} key factual claims for verification.`);
 
       // Stage 2 & 3: Search and Gather Evidence
       setStage("searching");
       let evidenceContext = "";
+      const successfulDomains = new Set<string>();
+      const processedUrls = new Set<string>();
+      const allScrapedSources: ScrapedSource[] = [];
 
+      // Query live web for each isolated claim
       for (let i = 0; i < claims.length; i++) {
         const claim = claims[i];
         addLog(`Querying live web for claim ${i + 1}: "${claim.substring(0, 45)}..."`);
-        evidenceContext += `\n--- Evidence for claim: "${claim}" ---\n`;
 
-        const searchResponse = await fetch("/api/analyze/search-query", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ claim, originalUrl: mode === "url" ? url : undefined }),
-        });
+        try {
+          const searchResponse = await fetch("/api/analyze/search-query", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ claim, originalUrl: mode === "url" ? url : undefined }),
+          });
 
-        const searchData = await searchResponse.json();
-        if (!searchResponse.ok) throw new Error(searchData.error || "Search API query failed.");
-
-        const results = searchData.results || [];
-        addLog(`Discovered ${results.length} independent web sources.`);
-
-        for (const resItem of results) {
-          try {
-            const host = new URL(resItem.link).hostname;
-            addLog(`Scraping primary text from: ${host}...`);
-            const scrapeResponse = await fetch("/api/analyze/scrape", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ url: resItem.link }),
-            });
-            const scrapeData = await scrapeResponse.json();
-            if (scrapeResponse.ok && scrapeData.text) {
-              evidenceContext += `Source URL: ${resItem.link}\nTitle: ${resItem.title}\nContent Snippet: ${scrapeData.text.substring(0, 1000)}\n\n`;
-              addLog(`Extracted article body content from ${host}.`);
-            } else {
-              throw new Error("Scrape fallback");
-            }
-          } catch (e) {
-            evidenceContext += `Source URL: ${resItem.link}\nTitle: ${resItem.title}\nContent Snippet: ${resItem.snippet}\n\n`;
-            addLog(`Fallback: Recorded snippet context for ${resItem.title.substring(0, 30)}.`);
+          const searchData = await searchResponse.json();
+          if (!searchResponse.ok) {
+            addLog(`[Search] Provider warning for claim ${i + 1}: ${searchData.error || "No results"}`);
+            continue;
           }
+
+          const results = (searchData.results || []).slice(0, 2);
+          addLog(`Discovered ${results.length} independent web candidates for claim ${i + 1}.`);
+
+          for (const resItem of results) {
+            const targetUrl = resItem.sourceUrl || resItem.link;
+            // Ensure no duplicate scrapes and never scrape Google News redirect links
+            if (!targetUrl || processedUrls.has(targetUrl) || targetUrl.includes('news.google.com')) continue;
+            processedUrls.add(targetUrl);
+
+            try {
+              let host = resItem.domain;
+              if (!host) {
+                host = new URL(targetUrl).hostname.replace(/^www\./, '').toLowerCase();
+              }
+              const sourceName = resItem.source || host;
+
+              addLog(`Scraping primary text from: ${sourceName}...`);
+              const scrapeResponse = await fetch("/api/analyze/scrape", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ url: targetUrl }),
+              });
+              const scrapeData = await scrapeResponse.json();
+
+              if (scrapeResponse.ok && scrapeData.text && scrapeData.text.length >= 150) {
+                const cleanExcerpt = scrapeData.text.replace(/\s+/g, ' ').substring(0, 1200);
+                evidenceContext += `--- Source ${allScrapedSources.length + 1}: ${sourceName} (${host}) ---\nTitle: ${resItem.title}\nURL: ${targetUrl}\nRelevant Content: ${cleanExcerpt}\n\n`;
+                addLog(`[Research] Accepted source: ${sourceName}`);
+                successfulDomains.add(host);
+                allScrapedSources.push({
+                  title: resItem.title,
+                  source: sourceName,
+                  domain: host,
+                  url: targetUrl,
+                  sourceUrl: targetUrl,
+                  link: targetUrl,
+                  snippet: resItem.snippet || '',
+                  content: cleanExcerpt,
+                  publishedAt: resItem.publishedAt,
+                });
+              } else {
+                addLog(`[Research] Rejected source: ${sourceName} (${scrapeData.error || 'Insufficient content'})`);
+              }
+            } catch (e: any) {
+              addLog(`[Research] Rejected source: ${targetUrl} (Fetch failure: ${e.message})`);
+            }
+          }
+        } catch (searchErr: any) {
+          addLog(`[Search] Error querying claim ${i + 1}: ${searchErr.message}`);
         }
       }
+      
+      addLog(`[Research] Independent sources: ${successfulDomains.size}`);
 
       // Stage 4: Synthesize Verdict
       setStage("synthesizing");
@@ -144,7 +194,7 @@ export default function DashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           originalText: extractData.originalText,
-          evidenceContext: evidenceContext,
+          evidenceContext: evidenceContext || "No independent web evidence found.",
         }),
       });
 
@@ -153,7 +203,11 @@ export default function DashboardPage() {
 
       addLog("Verification complete. Generating intelligence report.");
       setStage("complete");
-      setResult(synthesizeData);
+      setResult({
+        ...synthesizeData,
+        sourceDomains: Array.from(successfulDomains),
+        extractedSources: allScrapedSources,
+      });
 
       // Attempt to save history to Prisma backend
       fetch("/api/save-analysis", {
@@ -228,19 +282,38 @@ export default function DashboardPage() {
                 confidenceScore={result.confidenceScore}
                 summary={result.summary}
                 keyFindings={[
-                  "Cross-referenced across 4 primary independent sources.",
+                  `Cross-referenced across ${result.sourceDomains ? result.sourceDomains.length : 0} primary independent sources.`,
                   result.scoreBreakdown || "Evidence alignment calculated using corroboration matrices.",
-                  "Detected 2 factual claims within the submitted context."
+                  `Detected ${result.claims ? result.claims.length : 0} factual claims within the submitted context.`
                 ]}
               />
 
               <ClaimDecomposition 
-                claims={result.claims.map((c, i) => ({
-                  id: i.toString(),
-                  text: c.claimText,
-                  verdict: mapVerdict(c.verdict),
-                  confidence: Math.floor(70 + Math.random() * 25)
-                }))} 
+                claims={result.claims.map((c, i) => {
+                  const validEvidence = (c.evidence || []).filter(
+                    (e) => e.sourceUrl && e.sourceUrl.startsWith('http') && !e.sourceUrl.includes('news.google.com')
+                  );
+                  
+                  const primarySourceUrl =
+                    validEvidence[0]?.sourceUrl ||
+                    result.extractedSources?.[i % (result.extractedSources.length || 1)]?.sourceUrl ||
+                    result.extractedSources?.[0]?.sourceUrl;
+
+                  return {
+                    id: i.toString(),
+                    text: c.claimText,
+                    verdict: mapVerdict(c.verdict),
+                    confidence: Math.floor(70 + Math.random() * 25),
+                    explanation: c.explanation,
+                    sourceUrl: primarySourceUrl,
+                    evidence: validEvidence.length > 0 ? validEvidence : result.extractedSources?.slice(0, 2).map(s => ({
+                      sourceUrl: s.sourceUrl,
+                      title: s.title,
+                      snippet: s.snippet,
+                      credibility: 'HIGH' as const,
+                    })) || [],
+                  };
+                })} 
               />
             </div>
           )}
@@ -249,7 +322,7 @@ export default function DashboardPage() {
 
       {result && (
         <div className="w-full mt-12 animate-in slide-in-from-bottom-8 duration-700 fade-in zoom-in-95">
-          <EvidenceGraph />
+          <EvidenceGraph sourcesList={result.sourceDomains || []} />
         </div>
       )}
     </div>

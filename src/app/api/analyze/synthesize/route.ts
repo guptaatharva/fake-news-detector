@@ -1,15 +1,11 @@
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { generateObject } from 'ai';
 import { z } from 'zod';
+import { geminiGenerateObject, GeminiError } from '@/lib/gemini';
 import { NextRequest, NextResponse } from 'next/server';
 
-const google = createGoogleGenerativeAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
-
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 export async function POST(req: NextRequest) {
+  const requestStartTime = Date.now();
   try {
     const { originalText, evidenceContext } = await req.json();
 
@@ -17,13 +13,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing text or evidence context." }, { status: 400 });
     }
 
-    const { object } = await generateObject({
-      model: google('gemini-3.7-flash'),
-      providerOptions: {
-        google: {
-          thinkingLevel: 'medium'
-        }
-      },
+    // Count sources in evidence context (e.g., markers like "Source [" or "Source:")
+    const sourceMatches = (evidenceContext as string).match(/--- Source \d+:|Source \[|Publisher:/gi);
+    const sourceCount = sourceMatches ? sourceMatches.length : (evidenceContext.length > 0 ? 1 : 0);
+    const totalChars = (originalText as string).length + (evidenceContext as string).length;
+
+    console.log(`[Gemini] [Synthesize] Input sources: ${sourceCount}`);
+    console.log(`[Gemini] [Synthesize] Input characters: ${totalChars}`);
+    console.log(`[Gemini] [Synthesize] Starting request...`);
+
+    const { object, modelUsed, usedFallback } = await geminiGenerateObject({
       schema: z.object({
         verdict: z.enum(['TRUE', 'MOSTLY_TRUE', 'MIXTURE', 'MOSTLY_FALSE', 'FALSE', 'UNVERIFIABLE']).describe('The overall verdict of the article.'),
         confidenceScore: z.number().min(0).max(100).describe('Confidence score from 0 to 100 representing how confident you are in the overall verdict.'),
@@ -41,70 +40,44 @@ export async function POST(req: NextRequest) {
           })).optional().describe('List of evidence supporting the verdict.')
         })).describe('List of specific claims extracted from the article and evaluated.')
       }),
-      prompt: `You are an expert fact-checker and journalist. Analyze the following news article or text for factual accuracy based ONLY on the provided scraped evidence. 
+      prompt: `You are an expert fact-checker and journalist. Analyze the following claims/text for factual accuracy based ONLY on the provided scraped evidence. 
 
 IMPORTANT INSTRUCTIONS:
-- You must return ONLY raw valid JSON. Do not include markdown formatting like \`\`\`json.
+- You must return ONLY raw valid JSON matching the schema.
 - All 'verdict' fields MUST be strictly uppercase, chosen from: "TRUE", "MOSTLY_TRUE", "MIXTURE", "MOSTLY_FALSE", "FALSE", "UNVERIFIABLE".
 - All 'credibility' fields MUST be strictly uppercase, chosen from: "HIGH", "MEDIUM", "LOW".
+- For each claim's evidence, 'sourceUrl' MUST strictly be the exact publisher URL (e.g. https://www.reuters.com/... or https://www.bbc.com/...) as provided in the Scraped Web Evidence. NEVER use Google News intermediary URLs or search engine URLs.
 
-You MUST strictly follow this exact JSON structure:
-{
-  "verdict": "TRUE",
-  "confidenceScore": 85,
-  "scoreBreakdown": "The score of 85 was achieved because 2 of the 3 claims were fully verified by high credibility sources, but one claim lacked sufficient evidence, resulting in a 15 point deduction.",
-  "summary": "Short explanation of the overall verdict.",
-  "claims": [
-    {
-      "claimText": "Exact quote or claim from the text.",
-      "verdict": "FALSE",
-      "explanation": "Explanation for why this specific claim is false.",
-      "evidence": [
-        {
-          "sourceUrl": "https://example.com/source",
-          "title": "Source Title",
-          "snippet": "Relevant snippet from source.",
-          "credibility": "HIGH"
-        }
-      ]
-  ]
-}
-
-ENSURE you close all brackets and braces. Your response MUST end with a closing brace "}".
-
-Text to analyze:
+Text / Claims to analyze:
 ${originalText}
 
 Scraped Web Evidence to Base Your Verdict On:
 ${evidenceContext}`,
+      thinkingLevel: 'low',
+      timeoutMs: 90_000,
+      callerLabel: 'Synthesize',
     });
+
+    const elapsed = Date.now() - requestStartTime;
+    console.log(`[Gemini] [Synthesize] Request completed in ${elapsed}ms`);
+    console.log(
+      `[Synthesize API] Verdict=${object.verdict} confidence=${object.confidenceScore}` +
+      ` (model=${modelUsed}, fallback=${usedFallback})`
+    );
 
     return NextResponse.json(object);
   } catch (error: any) {
-    console.error('Error during synthesis:', error);
-    
-    let status = 500;
-    let message = 'An error occurred during synthesis.';
-
-    if (error && typeof error === 'object') {
-      const actualError = error.lastError || error;
-      const statusCode = actualError.statusCode || actualError.status;
-      if (statusCode) {
-        status = statusCode;
-        if (statusCode === 401) message = "Gemini API authentication failed. Please verify API key.";
-        else if (statusCode === 403) message = "Gemini API permission denied. Please verify configuration.";
-        else if (statusCode === 404) message = "The requested Gemini model was not found.";
-        else if (statusCode === 410) message = "The requested Gemini model has been retired (410 Gone).";
-        else if (statusCode === 429) message = "Gemini API rate limit exceeded. Please try again later.";
-        else if (statusCode === 500) message = "Gemini API experienced an internal server error.";
-        else message = `Gemini API encountered an error (${statusCode}).`;
-      } else if (actualError.name?.includes('Timeout') || actualError.message?.toLowerCase().includes('timeout')) {
-        status = 504;
-        message = "The AI request timed out. Please try again.";
-      } else if (actualError.name?.includes('ValidationError') || actualError.name?.includes('ParseError') || actualError.name?.includes('NoObjectGeneratedError')) {
-        message = "The AI model returned an invalid response format.";
-      }
+    const elapsed = Date.now() - requestStartTime;
+    if (error?.message?.toLowerCase().includes('timeout') || error?.statusCode === 504) {
+      console.error(`[Gemini] [Synthesize] Timeout after ${elapsed}ms`);
+    } else {
+      console.error(`[Gemini] [Synthesize] Error after ${elapsed}ms: ${error?.message || error}`);
     }
+    
+    const status = error instanceof GeminiError ? error.statusCode : 500;
+    const message = error instanceof GeminiError
+      ? error.message
+      : 'An error occurred during synthesis.';
 
     return NextResponse.json({ error: message }, { status });
   }
