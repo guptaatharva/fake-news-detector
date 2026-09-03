@@ -1,12 +1,7 @@
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { generateObject } from 'ai';
 import { z } from 'zod';
 import { extractTextFromUrl } from '@/lib/extractor';
+import { geminiGenerateObject, GeminiError } from '@/lib/gemini';
 import { NextRequest, NextResponse } from 'next/server';
-
-const google = createGoogleGenerativeAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
 
 export const maxDuration = 60; 
 
@@ -16,6 +11,69 @@ const RequestSchema = z.object({
 }).refine(data => data.url || data.text, {
   message: "Either URL or text must be provided.",
 });
+
+function deduplicateClaims(rawClaims: string[]): string[] {
+  const deduped: string[] = [];
+  const stopWords = new Set([
+    'the', 'a', 'an', 'in', 'on', 'at', 'by', 'for', 'with', 'about', 'against',
+    'between', 'into', 'through', 'during', 'before', 'after', 'above', 'below',
+    'to', 'from', 'up', 'down', 'of', 'off', 'over', 'under', 'again', 'further',
+    'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any',
+    'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor',
+    'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 'can', 'will',
+    'just', 'should', 'now', 'that', 'this', 'these', 'those', 'is', 'are', 'was',
+    'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does',
+    'did', 'doing', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while'
+  ]);
+
+  const getSignificantTokens = (text: string): Set<string> => {
+    return new Set(
+      text
+        .toLowerCase()
+        .replace(/[^\w\s]/g, '')
+        .split(/\s+/)
+        .filter((w) => w.length > 2 && !stopWords.has(w))
+    );
+  };
+
+  for (const raw of rawClaims) {
+    const trimmed = raw.trim();
+    if (!trimmed || trimmed.length < 15) continue;
+
+    const tokens = getSignificantTokens(trimmed);
+    if (tokens.size < 3) continue;
+
+    let isDuplicate = false;
+    for (const existing of deduped) {
+      if (existing.toLowerCase() === trimmed.toLowerCase()) {
+        isDuplicate = true;
+        break;
+      }
+
+      const existingTokens = getSignificantTokens(existing);
+      let intersection = 0;
+      for (const t of tokens) {
+        if (existingTokens.has(t)) intersection++;
+      }
+      const union = new Set([...tokens, ...existingTokens]).size;
+      const jaccard = union > 0 ? intersection / union : 0;
+
+      const minTokens = Math.min(tokens.size, existingTokens.size);
+      const overlap = minTokens > 0 ? intersection / minTokens : 0;
+
+      if (jaccard > 0.65 || overlap > 0.85) {
+        isDuplicate = true;
+        break;
+      }
+    }
+
+    if (!isDuplicate) {
+      deduped.push(trimmed);
+    }
+  }
+
+  return deduped;
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,15 +86,23 @@ export async function POST(req: NextRequest) {
 
     let contentToAnalyze = result.data.text || '';
 
+    // --- Stage 1: Extract content from URL (scraper concern) ---
     if (result.data.url) {
       try {
         let rawUrl = result.data.url.trim();
         if (!rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
           rawUrl = 'https://' + rawUrl;
         }
+        console.log(`[Extract API] Starting content extraction for URL: ${rawUrl}`);
         contentToAnalyze = await extractTextFromUrl(rawUrl);
+        console.log(`[Extract API] Extracted ${contentToAnalyze.length} chars from ${rawUrl}`);
       } catch (error: any) {
-        return NextResponse.json({ error: error.message || "Failed to extract content from the provided URL." }, { status: 400 });
+        // This is a SCRAPER error, not a Gemini error — handle separately
+        console.error(`[Extract API] Scraper error for ${result.data.url}:`, error.message);
+        return NextResponse.json(
+          { error: error.message || "Failed to extract content from the provided URL." },
+          { status: 422 }
+        );
       }
     }
 
@@ -44,60 +110,63 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Not enough content to analyze." }, { status: 400 });
     }
 
-    const { object: extraction } = await generateObject({
-      model: google('gemini-3.7-flash'),
-      providerOptions: {
-        google: {
-          thinkingLevel: 'medium'
-        }
-      },
-      schema: z.object({
-        claims: z.array(z.string()).describe('Top 5 most important factual claims from the text.')
-      }),
-      prompt: `Extract the top 1 to 5 most important verifiable factual claims from the following text.
-      
+    // --- Stage 2: Gemini AI claim extraction (AI concern) ---
+    try {
+      console.log(`[Extract API] Sending ${contentToAnalyze.length} chars to Gemini for claim extraction`);
+
+      const { object: extraction, modelUsed, usedFallback } = await geminiGenerateObject({
+        schema: z.object({
+          claims: z.array(z.string()).describe('List of 10 to 15 distinct, atomic, verifiable factual claims.')
+        }),
+        prompt: `Extract 10 to 15 distinct, atomic, verifiable factual claims from the following text.
+Whenever the submitted text contains enough factual information, you MUST produce at least 10 claims (target: 10–15).
+
 IMPORTANT INSTRUCTIONS:
-- You must return ONLY raw valid JSON. Do not include markdown formatting like \`\`\`json.
-- Each claim MUST be completely unique and distinct from the others. Do not repeat the same claim or extract highly similar claims.
-- You MUST strictly follow this exact JSON structure:
-{
-  "claims": [
-    "First specific factual claim extracted from the text.",
-    "Second specific factual claim extracted from the text."
-  ]
-}
+- You must return ONLY raw valid JSON strictly matching the schema: {"claims": [...]}.
+- Do NOT simply split sentences mechanically.
+- Decompose the text into atomic, specific, independently verifiable factual assertions such as:
+  * Who did what (key actors, subjects, persons)
+  * When it happened (dates, times, sequence)
+  * Where it happened (locations, jurisdictions)
+  * What was announced or stated (direct quotes, official announcements)
+  * What organizations, companies, or institutions were involved
+  * What numbers, statistics, metrics, or financial figures were reported
+  * What official actions, policies, legal measures, or sanctions were taken
+  * What consequences, results, or outcomes were reported
+- Distinctness: Every claim MUST be unique and distinct from the others. Do NOT produce variations or rewordings of the same fact.
+- Groundedness: Claims MUST be grounded ONLY in the submitted text. Do NOT extrapolate, speculate, or fabricate facts.
+- If the source text genuinely contains fewer than 10 independently verifiable assertions, return the maximum number supported by the text. But for normal news articles, target 10 to 15 claims.
 - ENSURE you close all brackets and braces. Your response MUST end with a closing brace "}".
 
-      Text: ${contentToAnalyze}`
-    });
+      Text: ${contentToAnalyze}`,
+        thinkingLevel: 'medium',
+        callerLabel: 'Extract',
+      });
 
-    return NextResponse.json({ claims: extraction.claims, originalText: contentToAnalyze });
-  } catch (error: any) {
-    console.error('Error during extraction:', error);
-    
-    let status = 500;
-    let message = 'An error occurred during extraction.';
+      const rawClaims = Array.isArray(extraction.claims) ? extraction.claims : [];
+      const dedupedClaims = deduplicateClaims(rawClaims);
 
-    if (error && typeof error === 'object') {
-      const actualError = error.lastError || error;
-      const statusCode = actualError.statusCode || actualError.status;
-      if (statusCode) {
-        status = statusCode;
-        if (statusCode === 401) message = "Gemini API authentication failed. Please verify API key.";
-        else if (statusCode === 403) message = "Gemini API permission denied. Please verify configuration.";
-        else if (statusCode === 404) message = "The requested Gemini model was not found.";
-        else if (statusCode === 410) message = "The requested Gemini model has been retired (410 Gone).";
-        else if (statusCode === 429) message = "Gemini API rate limit exceeded. Please try again later.";
-        else if (statusCode === 500) message = "Gemini API experienced an internal server error.";
-        else message = `Gemini API encountered an error (${statusCode}).`;
-      } else if (actualError.name?.includes('Timeout') || actualError.message?.toLowerCase().includes('timeout')) {
-        status = 504;
-        message = "The AI request timed out. Please try again.";
-      } else if (actualError.name?.includes('ValidationError') || actualError.name?.includes('ParseError') || actualError.name?.includes('NoObjectGeneratedError')) {
-        message = "The AI model returned an invalid response format.";
-      }
+      console.log(`[Extract] Claims generated: ${rawClaims.length}`);
+      console.log(`[Extract] Claims after deduplication: ${dedupedClaims.length}`);
+      console.log(
+        `[Extract API] Model=${modelUsed}, fallback=${usedFallback}, returning ${dedupedClaims.length} claims`
+      );
+
+      return NextResponse.json({ claims: dedupedClaims, originalText: contentToAnalyze });
+    } catch (geminiError: any) {
+      // This is a GEMINI/AI error — handle with AI-specific diagnostics
+      console.error('[Extract API] Gemini error:', geminiError.message || geminiError);
+      
+      const status = geminiError instanceof GeminiError ? geminiError.statusCode : 500;
+      const message = geminiError instanceof GeminiError
+        ? geminiError.message
+        : 'An error occurred during AI claim extraction.';
+
+      return NextResponse.json({ error: message }, { status });
     }
-
-    return NextResponse.json({ error: message }, { status });
+  } catch (error: any) {
+    // Catch-all for unexpected errors (JSON parse, etc.)
+    console.error('[Extract API] Unexpected error:', error);
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
   }
 }
