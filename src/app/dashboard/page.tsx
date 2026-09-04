@@ -12,8 +12,13 @@ import ClaimDecomposition from "@/components/dashboard/ClaimDecomposition";
 
 interface Evidence {
   sourceUrl?: string;
+  url?: string;
   title: string;
   snippet: string;
+  publisher?: string;
+  source?: string;
+  domain?: string;
+  summary?: string;
   credibility: "HIGH" | "MEDIUM" | "LOW";
 }
 
@@ -44,6 +49,42 @@ interface AnalysisResult {
   claims: Claim[];
   sourceDomains?: string[];
   extractedSources?: ScrapedSource[];
+}
+
+// Helpers for source summary, domain, and publisher extraction
+function extractCleanDomain(rawUrl?: string): string {
+  if (!rawUrl) return '';
+  try {
+    return new URL(rawUrl).hostname.replace(/^www\./, '').toLowerCase();
+  } catch {
+    return '';
+  }
+}
+
+function formatPublisherFromDomain(domain: string): string {
+  if (!domain) return 'Publisher';
+  const name = domain.split('.')[0];
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+function extractConciseSummary(content?: string, title?: string, snippet?: string, maxWords = 35): string {
+  if (content && content.trim().length > 30) {
+    const clean = content.replace(/\s+/g, ' ').trim();
+    const sentenceMatch = clean.match(/^([^.!?]+[.!?](?:\s*[^.!?]+[.!?])?)/);
+    let summary = sentenceMatch ? sentenceMatch[1].trim() : clean;
+    const words = summary.split(' ');
+    if (words.length > maxWords) {
+      summary = words.slice(0, maxWords).join(' ') + '...';
+    }
+    return summary;
+  }
+  if (snippet && snippet.trim().length > 20) {
+    return snippet.trim();
+  }
+  if (title && title.trim().length > 15) {
+    return title.trim();
+  }
+  return 'Independent reporting on the factual assertions related to this claim.';
 }
 
 // Helper to map backend verdicts to the new UI verdicts
@@ -291,11 +332,48 @@ export default function DashboardPage() {
               <ClaimDecomposition 
                 claims={result.claims.map((c, i) => {
                   const validEvidence = (c.evidence || []).filter(
-                    (e) => e.sourceUrl && e.sourceUrl.startsWith('http') && !e.sourceUrl.includes('news.google.com')
+                    (e) => (e.sourceUrl || e.url) && (e.sourceUrl || e.url)!.startsWith('http') && !(e.sourceUrl || e.url)!.includes('news.google.com')
                   );
-                  
+
+                  // Map and enrich evidence items with publisher, domain, and summary
+                  const rawSources = validEvidence.length > 0 
+                    ? validEvidence 
+                    : result.extractedSources?.slice(0, 2) || [];
+
+                  const enrichedEvidence = rawSources.map((ev: any) => {
+                    const sUrl = ev.sourceUrl || ev.url || ev.link;
+                    const domain = ev.domain || extractCleanDomain(sUrl);
+                    
+                    // Correlate with matched scraped source if available
+                    const matchedScraped = result.extractedSources?.find(
+                      (s) => (s.sourceUrl && s.sourceUrl === sUrl) || (s.domain && s.domain === domain)
+                    );
+
+                    const publisher =
+                      ev.publisher ||
+                      matchedScraped?.source ||
+                      (domain ? formatPublisherFromDomain(domain) : 'Publisher');
+
+                    const summary =
+                      ev.summary && ev.summary.trim().length > 15
+                        ? ev.summary.trim()
+                        : extractConciseSummary(matchedScraped?.content, ev.title || matchedScraped?.title, ev.snippet || matchedScraped?.snippet);
+
+                    return {
+                      sourceUrl: sUrl,
+                      url: sUrl,
+                      title: ev.title || matchedScraped?.title || 'Source Article',
+                      publisher,
+                      source: publisher,
+                      domain,
+                      snippet: ev.snippet || matchedScraped?.snippet || '',
+                      summary,
+                      credibility: (ev.credibility || 'HIGH') as 'HIGH' | 'MEDIUM' | 'LOW',
+                    };
+                  });
+
                   const primarySourceUrl =
-                    validEvidence[0]?.sourceUrl ||
+                    enrichedEvidence[0]?.sourceUrl ||
                     result.extractedSources?.[i % (result.extractedSources.length || 1)]?.sourceUrl ||
                     result.extractedSources?.[0]?.sourceUrl;
 
@@ -306,12 +384,7 @@ export default function DashboardPage() {
                     confidence: Math.floor(70 + Math.random() * 25),
                     explanation: c.explanation,
                     sourceUrl: primarySourceUrl,
-                    evidence: validEvidence.length > 0 ? validEvidence : result.extractedSources?.slice(0, 2).map(s => ({
-                      sourceUrl: s.sourceUrl,
-                      title: s.title,
-                      snippet: s.snippet,
-                      credibility: 'HIGH' as const,
-                    })) || [],
+                    evidence: enrichedEvidence,
                   };
                 })} 
               />
