@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const nvidia = createOpenAICompatible({
   name: 'nvidia',
-  baseURL: 'https://integrate.api.nvidia.com/v1',
+  baseURL: 'https://integrate.api.nvidia.com/v1/',
   headers: {
     Authorization: `Bearer ${process.env.NVIDIA_API_KEY}`,
   },
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { object: extraction } = await generateObject({
-      model: nvidia('meta/llama-3.1-70b-instruct'),
+      model: nvidia('nvidia/nemotron-3-nano-omni-30b-a3b-reasoning'),
       schema: z.object({
         claims: z.array(z.string()).describe('Top 5 most important factual claims from the text.')
       }),
