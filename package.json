@@ -9,7 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@ai-sdk/google": "^4.0.62",
     "@ai-sdk/openai": "^4.0.2",
     "@ai-sdk/openai-compatible": "^3.0.1",
     "@base-ui/react": "^1.6.0",
@@ -27,6 +26,7 @@
     "next": "15.0.3",
     "next-auth": "5.0.0-beta.25",
     "next-themes": "^0.4.3",
+    "openai": "^7.10.0",
     "pg": "^8.22.0",
     "puppeteer": "^25.2.1",
     "react": "^18.2.0",

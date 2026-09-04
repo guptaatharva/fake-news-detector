@@ -1,9 +1,10 @@
 import { z } from 'zod';
 import { extractTextFromUrl } from '@/lib/extractor';
-import { geminiGenerateObject, GeminiError } from '@/lib/gemini';
+import { nvidiaGenerateObject, NvidiaError } from '@/lib/nvidia';
 import { NextRequest, NextResponse } from 'next/server';
 
-export const maxDuration = 60; 
+export const maxDuration = 300;
+
 
 const RequestSchema = z.object({
   url: z.string().optional(),
@@ -110,56 +111,49 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Not enough content to analyze." }, { status: 400 });
     }
 
-    // --- Stage 2: Gemini AI claim extraction (AI concern) ---
+    // --- Stage 2: NVIDIA Nemotron 3 Ultra claim extraction ---
     try {
-      console.log(`[Extract API] Sending ${contentToAnalyze.length} chars to Gemini for claim extraction`);
+      console.log(`[NeMo] [Extract] Sending ${contentToAnalyze.length} chars for claim extraction`);
 
-      const { object: extraction, modelUsed, usedFallback } = await geminiGenerateObject({
+      const { object: extraction, modelUsed } = await nvidiaGenerateObject({
         schema: z.object({
           claims: z.array(z.string()).describe('List of 10 to 15 distinct, atomic, verifiable factual claims.')
         }),
         prompt: `Extract 10 to 15 distinct, atomic, verifiable factual claims from the following text.
-Whenever the submitted text contains enough factual information, you MUST produce at least 10 claims (target: 10–15).
+Target: 10–15 claims.
 
-IMPORTANT INSTRUCTIONS:
-- You must return ONLY raw valid JSON strictly matching the schema: {"claims": [...]}.
-- Do NOT simply split sentences mechanically.
-- Decompose the text into atomic, specific, independently verifiable factual assertions such as:
-  * Who did what (key actors, subjects, persons)
-  * When it happened (dates, times, sequence)
-  * Where it happened (locations, jurisdictions)
-  * What was announced or stated (direct quotes, official announcements)
-  * What organizations, companies, or institutions were involved
-  * What numbers, statistics, metrics, or financial figures were reported
-  * What official actions, policies, legal measures, or sanctions were taken
-  * What consequences, results, or outcomes were reported
-- Distinctness: Every claim MUST be unique and distinct from the others. Do NOT produce variations or rewordings of the same fact.
-- Groundedness: Claims MUST be grounded ONLY in the submitted text. Do NOT extrapolate, speculate, or fabricate facts.
-- If the source text genuinely contains fewer than 10 independently verifiable assertions, return the maximum number supported by the text. But for normal news articles, target 10 to 15 claims.
-- ENSURE you close all brackets and braces. Your response MUST end with a closing brace "}".
+Format requirements:
+Output MUST be a single, valid JSON object with the key "claims" containing an array of claim strings:
+{"claims": ["claim 1", "claim 2", ...]}
 
-      Text: ${contentToAnalyze}`,
-        thinkingLevel: 'medium',
+Extraction guidelines:
+- Each claim must be an atomic, standalone factual assertion (who did what, when, where, numbers, quotes, official actions).
+- Claims must be directly grounded in the text without speculation.
+- Each claim must be distinct and non-overlapping.
+- Keep reasoning brief and proceed immediately to outputting the JSON object.
+- Output ONLY the JSON object.
+
+Text:
+${contentToAnalyze}`,
+        maxTokens: 16384,
         callerLabel: 'Extract',
       });
 
       const rawClaims = Array.isArray(extraction.claims) ? extraction.claims : [];
       const dedupedClaims = deduplicateClaims(rawClaims);
 
-      console.log(`[Extract] Claims generated: ${rawClaims.length}`);
-      console.log(`[Extract] Claims after deduplication: ${dedupedClaims.length}`);
-      console.log(
-        `[Extract API] Model=${modelUsed}, fallback=${usedFallback}, returning ${dedupedClaims.length} claims`
-      );
+      console.log(`[NeMo] [Extract] Claims generated: ${rawClaims.length}`);
+      console.log(`[NeMo] [Extract] Claims after deduplication: ${dedupedClaims.length}`);
+      console.log(`[NeMo] [Extract] Model=${modelUsed}, returning ${dedupedClaims.length} claims`);
 
       return NextResponse.json({ claims: dedupedClaims, originalText: contentToAnalyze });
-    } catch (geminiError: any) {
-      // This is a GEMINI/AI error — handle with AI-specific diagnostics
-      console.error('[Extract API] Gemini error:', geminiError.message || geminiError);
-      
-      const status = geminiError instanceof GeminiError ? geminiError.statusCode : 500;
-      const message = geminiError instanceof GeminiError
-        ? geminiError.message
+    } catch (aiError: any) {
+      // NVIDIA / AI error — handle with specific diagnostics
+      console.error('[NeMo] [Extract] Error:', aiError.message || aiError);
+
+      const status = aiError instanceof NvidiaError ? aiError.statusCode : 500;
+      const message = aiError instanceof NvidiaError
+        ? aiError.message
         : 'An error occurred during AI claim extraction.';
 
       return NextResponse.json({ error: message }, { status });
