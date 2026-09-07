@@ -3,14 +3,7 @@ import { extractTextFromUrl } from '@/lib/extractor';
 import { nvidiaGenerateObject, NvidiaError } from '@/lib/nvidia';
 import { NextRequest, NextResponse } from 'next/server';
 
-const nvidia = createOpenAICompatible({
-  name: 'nvidia',
-  baseURL: 'https://integrate.api.nvidia.com/v1/',
-  headers: {
-    Authorization: `Bearer ${process.env.NVIDIA_API_KEY}`,
-  },
-});
-
+export const maxDuration = 300;
 
 const RequestSchema = z.object({
   url: z.string().optional(),
@@ -117,23 +110,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Not enough content to analyze." }, { status: 400 });
     }
 
-    const { object: extraction } = await generateObject({
-      model: nvidia('nvidia/nemotron-3-nano-omni-30b-a3b-reasoning'),
-      schema: z.object({
-        claims: z.array(z.string()).describe('Top 5 most important factual claims from the text.')
-      }),
-      prompt: `Extract the top 1 to 5 most important verifiable factual claims from the following text.
-      
-IMPORTANT INSTRUCTIONS:
-- You must return ONLY raw valid JSON. Do not include markdown formatting like \`\`\`json.
-- Each claim MUST be completely unique and distinct from the others. Do not repeat the same claim or extract highly similar claims.
-- You MUST strictly follow this exact JSON structure:
-{
-  "claims": [
-    "First specific factual claim extracted from the text.",
-    "Second specific factual claim extracted from the text."
-  ]
-}
+    // --- Stage 2: NVIDIA Nemotron 3 Ultra claim extraction ---
+    try {
+      console.log(`[NeMo] [Extract] Sending ${contentToAnalyze.length} chars for claim extraction`);
+
+      const { object: extraction, modelUsed } = await nvidiaGenerateObject({
+        schema: z.object({
+          claims: z.array(z.string()).describe('List of 10 to 15 distinct, atomic, verifiable factual claims.')
+        }),
+        prompt: `Extract 10 to 15 distinct, atomic, verifiable factual claims from the following text.
+Target: 10–15 claims.
+
+Format requirements:
+Output MUST be a single, valid JSON object with the key "claims" containing an array of claim strings:
+{"claims": ["claim 1", "claim 2", ...]}
 
 Extraction guidelines:
 - Each claim must be an atomic, standalone factual assertion (who did what, when, where, numbers, quotes, official actions).
