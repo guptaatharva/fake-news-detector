@@ -1,75 +1,38 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { Sparkles, Terminal } from "lucide-react";
 
 export default function DashboardHero() {
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 35 }}
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7 }}
-      className="relative mb-20 flex justify-center"
+      transition={{ duration: 0.5 }}
+      className="space-y-2 pb-6"
     >
-      {/* Aurora Glow */}
-      <div className="absolute -top-24 h-[420px] w-[420px] rounded-full bg-teal-500/10 blur-[140px]" />
+      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-graphite-surface border border-graphite-border-sec">
+        <Sparkles className="h-3.5 w-3.5 text-neonRed" />
+        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
+          REAL-TIME INTELLIGENCE COMMAND CENTER
+        </span>
+      </div>
 
-      <div className="relative max-w-5xl text-center">
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="mb-6 text-sm uppercase tracking-[12px] text-teal-400"
-        >
-          AI FACT CHECKING DASHBOARD
-        </motion.p>
-
-        <div className="flex flex-wrap justify-center gap-5">
-          <motion.h1
-            initial={{ opacity: 0, y: 45, filter: "blur(10px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.7 }}
-            className="text-6xl lg:text-8xl font-black text-white"
-          >
-            Analysis
-          </motion.h1>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 45, filter: "blur(10px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ delay: 0.18, duration: 0.7 }}
-            className="text-6xl lg:text-8xl font-black bg-gradient-to-r from-teal-400 via-blue-500 to-purple-500 bg-clip-text text-transparent"
-          >
-            Workspace
-          </motion.h1>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h1 className="font-display text-4xl sm:text-5xl font-extrabold text-foreground">
+            Verification <span className="bg-gradient-to-r from-[#FF1744] via-[#FF4D6D] to-[#FF1744] bg-clip-text text-transparent">Workspace</span>
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
+            Input a news URL, raw text passage, or specific claim to trigger multi-stage primary source corroboration.
+          </p>
         </div>
 
-        <motion.p
-          initial={{ opacity: 0, y: 25 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.45 }}
-          className="mx-auto mt-10 max-w-4xl text-xl leading-9 text-gray-400"
-        >
-          Paste a{" "}
-          <span className="font-semibold text-white">
-            news article
-          </span>
-          ,{" "}
-          <span className="font-semibold text-white">
-            URL
-          </span>{" "}
-          or{" "}
-          <span className="font-semibold text-white">
-            social media claim
-          </span>{" "}
-          and let{" "}
-          <span className="bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text font-bold text-transparent">
-            VeraCius AI
-          </span>{" "}
-          search the live web, gather trusted evidence,
-          compare independent sources and generate an
-          explainable fact-checking report.
-        </motion.p>
+        <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground bg-graphite-surface px-4 py-2 rounded-2xl border border-graphite-border shrink-0">
+          <Terminal className="h-4 w-4 text-neonRed" />
+          <span>V2.4 ENGINE READY</span>
+        </div>
       </div>
-    </motion.section>
+    </motion.div>
   );
 }
