@@ -1,6 +1,6 @@
-# VeriLens AI
+# VeraCius AI
 
-VeriLens is a next-generation, AI-powered news verification platform. It doesn't just rely on an LLM's pre-trained memory—it actively functions as an **Autonomous Fact-Checking Agent** by searching the live internet and scraping evidence in real-time to combat fake news and misinformation.
+VeraCius is a next-generation, AI-powered news verification platform. It doesn't just rely on an LLM's pre-trained memory—it actively functions as an **Autonomous Fact-Checking Agent** by searching the live internet and scraping evidence in real-time to combat fake news and misinformation.
 
 ## 🚀 Key Features
 
