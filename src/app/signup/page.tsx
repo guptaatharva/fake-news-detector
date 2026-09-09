@@ -3,27 +3,63 @@
 import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ShieldCheck, ArrowRight, AlertCircle, Mail, Lock } from "lucide-react";
+import { ShieldCheck, ArrowRight, AlertCircle, Mail, Lock, UserRound } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 
-function LoginForm() {
+function SignUpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const rawNext = searchParams.get("next") || "/";
-  const next = rawNext.startsWith("/dashboard") && rawNext !== "/dashboard/history" ? "/" : rawNext;
+  const next = rawNext.startsWith("/dashboard") ? "/" : rawNext;
 
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    const cleanUsername = username.trim();
+    const cleanEmail = email.trim();
+
+    // 1. Client-side validation
+    if (!cleanUsername) {
+      setError("Username is required.");
+      setLoading(false);
+      return;
+    }
+
+    if (cleanUsername.length < 3 || cleanUsername.length > 30) {
+      setError("Username must be between 3 and 30 characters.");
+      setLoading(false);
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_-]+$/.test(cleanUsername)) {
+      setError("Username can only contain letters, numbers, underscores, and hyphens (no spaces or special symbols).");
+      setLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      setLoading(false);
+      return;
+    }
 
     const supabase = createClient();
     if (!supabase) {
@@ -33,23 +69,55 @@ function LoginForm() {
     }
 
     try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
+      // 2. Create account on server with auto-confirmed email (no confirmation emails, no rate limits)
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: cleanUsername,
+          email: cleanEmail,
+          password,
+        }),
       });
 
-      if (authError) {
-        setError(authError.message);
+      const result = await res.json();
+
+      if (!res.ok) {
+        setError(result.error || "Failed to create account. Please try again.");
         setLoading(false);
         return;
       }
 
-      if (data.session) {
-        router.push(next);
-        router.refresh();
+      // 3. Immediately establish authenticated session in browser client
+      const { data: sessionData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
+        password,
+      });
+
+      if (signInError) {
+        setError(signInError.message);
+        setLoading(false);
+        return;
       }
+
+      // 4. Try updating profile record from authenticated client if table is ready
+      if (sessionData.user) {
+        try {
+          await supabase.from("profiles").upsert({
+            id: sessionData.user.id,
+            username: cleanUsername,
+            updated_at: new Date().toISOString(),
+          });
+        } catch {
+          // Table sync handled by database trigger
+        }
+      }
+
+      // 5. Navigate directly to Home page ("/")
+      router.push(next);
+      router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An unexpected error occurred during sign in.");
+      setError(err instanceof Error ? err.message : "An unexpected error occurred during account creation.");
       setLoading(false);
     }
   };
@@ -71,10 +139,10 @@ function LoginForm() {
 
           <div>
             <h1 className="font-display text-2xl font-bold tracking-wider text-foreground">
-              VERACIUS <span className="text-neonRed font-mono text-sm">AUTH</span>
+              CREATE <span className="text-neonRed font-mono text-sm">ACCOUNT</span>
             </h1>
             <p className="font-mono text-xs text-muted-foreground uppercase tracking-widest mt-1">
-              INTELLIGENCE PORTAL ACCESS
+              NEW INTELLIGENCE OPERATOR REGISTRATION
             </p>
           </div>
         </div>
@@ -90,7 +158,24 @@ function LoginForm() {
           </motion.div>
         )}
 
-        <form onSubmit={handleSignIn} className="space-y-4">
+        <form onSubmit={handleSignUp} className="space-y-4">
+          <div className="space-y-2">
+            <label className="font-mono text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <UserRound className="h-3.5 w-3.5 text-neonRed" />
+              <span>Username</span>
+            </label>
+            <Input
+              type="text"
+              required
+              minLength={3}
+              maxLength={30}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="operator_01"
+              className="h-12 rounded-xl border-graphite-border bg-graphite-bg px-4 font-mono text-sm text-foreground focus:border-[#FF1744] focus:ring-1 focus:ring-[#FF1744] focus:shadow-red-focus transition-all duration-300"
+            />
+          </div>
+
           <div className="space-y-2">
             <label className="font-mono text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
               <Mail className="h-3.5 w-3.5 text-neonRed" />
@@ -114,8 +199,25 @@ function LoginForm() {
             <Input
               type="password"
               required
+              minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="•••••••••••• (min 6 chars)"
+              className="h-12 rounded-xl border-graphite-border bg-graphite-bg px-4 font-mono text-sm text-foreground focus:border-[#FF1744] focus:ring-1 focus:ring-[#FF1744] focus:shadow-red-focus transition-all duration-300"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="font-mono text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <Lock className="h-3.5 w-3.5 text-neonRed" />
+              <span>Confirm Password</span>
+            </label>
+            <Input
+              type="password"
+              required
+              minLength={6}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="••••••••••••"
               className="h-12 rounded-xl border-graphite-border bg-graphite-bg px-4 font-mono text-sm text-foreground focus:border-[#FF1744] focus:ring-1 focus:ring-[#FF1744] focus:shadow-red-focus transition-all duration-300"
             />
@@ -126,19 +228,19 @@ function LoginForm() {
             disabled={loading}
             className="h-12 w-full rounded-xl bg-gradient-to-r from-neonRed to-neonRed-deep hover:from-neonRed-bright hover:to-neonRed text-foreground font-mono text-xs font-bold uppercase tracking-wider shadow-red-glow border border-neonRed-bright/30 transition-all duration-300 flex items-center justify-center gap-2 animate-shimmer"
           >
-            <span>{loading ? "SIGNING IN..." : "SIGN IN"}</span>
+            <span>{loading ? "CREATING ACCOUNT..." : "CREATE ACCOUNT"}</span>
             <ArrowRight className="h-4 w-4" />
           </Button>
         </form>
 
         <div className="pt-2 text-center space-y-3 font-mono text-xs text-muted-foreground">
           <div>
-            <span>Don't have an account? </span>
+            <span>Already have an account? </span>
             <Link
-              href={next !== "/" ? `/signup?next=${encodeURIComponent(next)}` : "/signup"}
+              href={next !== "/" ? `/login?next=${encodeURIComponent(next)}` : "/login"}
               className="text-neonRed font-semibold hover:underline"
             >
-              CREATE ACCOUNT
+              SIGN IN
             </Link>
           </div>
           <div>
@@ -152,10 +254,10 @@ function LoginForm() {
   );
 }
 
-export default function LoginPage() {
+export default function SignUpPage() {
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center font-mono text-xs text-muted-foreground">LOADING...</div>}>
-      <LoginForm />
+      <SignUpForm />
     </Suspense>
   );
 }

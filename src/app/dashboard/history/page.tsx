@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { createClient } from "@/lib/supabase/server";
 import { PrismaClient } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { ShieldCheck, ShieldAlert, AlertTriangle, HelpCircle, Link as LinkIcon, FileText, Calendar } from "lucide-react";
@@ -9,14 +9,17 @@ const prisma = globalForPrisma.prisma || new PrismaClient();
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 export default async function HistoryPage() {
-  const session = await auth();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
 
-  if (!session || !session.user?.id) {
-    redirect("/api/auth/signin");
+  if (!user) {
+    redirect("/login?next=/dashboard/history");
   }
 
   const analyses = await prisma.analysis.findMany({
-    where: { userId: session.user.id },
+    where: { userId: user.id },
     orderBy: { createdAt: "desc" },
     include: { claims: true },
   });

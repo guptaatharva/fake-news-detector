@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, LogOut, UserRound } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -11,10 +11,12 @@ import { cn } from "@/lib/utils";
 import MagneticButton from "@/components/animation/MagneticButton";
 import SystemStatus from "@/components/ui/SystemStatus";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -109,23 +111,65 @@ export default function Navbar() {
           })}
         </nav>
 
-        {/* Primary CTA Button & Theme Toggle */}
+        {/* Primary CTA, Auth Controls & Theme Toggle */}
         <motion.div
           initial={{ opacity: 0, x: 15 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.4, delay: 0.2 }}
-          className="flex items-center gap-3"
+          className="flex items-center gap-2 sm:gap-3"
         >
+          {user ? (
+            <div className="flex items-center gap-2">
+              <Link
+                href="/profile"
+                title={user.user_metadata?.username ? `@${user.user_metadata.username}` : user.email ?? "Profile"}
+                className="h-10 px-3.5 sm:px-4 rounded-full text-xs font-mono tracking-wider uppercase font-semibold text-muted-foreground hover:text-accent border border-graphite-border hover:border-neonRed/50 hover:bg-graphite-elevated transition-all flex items-center gap-1.5"
+              >
+                <UserRound className="h-3.5 w-3.5 text-neonRed" />
+                <span>PROFILE</span>
+                {user.user_metadata?.username && (
+                  <span className="hidden sm:inline-block max-w-28 truncate text-[10px] text-neonRed font-mono font-normal">
+                    @{user.user_metadata.username}
+                  </span>
+                )}
+              </Link>
+              <button
+                type="button"
+                onClick={() => void signOut()}
+                className="h-10 px-3.5 sm:px-4 rounded-full text-xs font-mono tracking-wider uppercase font-semibold text-muted-foreground hover:text-neonRed border border-graphite-border hover:border-neonRed/50 hover:bg-neonRed/10 transition-all flex items-center gap-1.5"
+              >
+                <LogOut className="h-3.5 w-3.5 text-neonRed" />
+                <span>LOG OUT</span>
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link
+                href="/login"
+                className="h-10 px-3.5 sm:px-4 rounded-full text-xs font-mono tracking-wider uppercase font-semibold text-muted-foreground hover:text-accent border border-graphite-border hover:border-neonRed/50 hover:bg-graphite-elevated transition-all flex items-center justify-center"
+              >
+                SIGN IN
+              </Link>
+              <Link
+                href="/signup"
+                className="h-10 px-3.5 sm:px-4 rounded-full text-xs font-mono tracking-wider uppercase font-semibold text-neonRed border border-neonRed/40 hover:bg-neonRed/10 hover:border-neonRed transition-all flex items-center justify-center shadow-[0_0_10px_rgba(255,23,68,0.15)]"
+              >
+                CREATE ACCOUNT
+              </Link>
+            </div>
+          )}
+
           <ThemeToggle />
+
           <MagneticButton>
             <Link 
               href="/dashboard" 
               className={cn(
                 buttonVariants({ variant: "default" }),
-                "h-11 px-6 rounded-full text-xs font-mono tracking-wider uppercase font-bold bg-gradient-to-r from-neonRed to-neonRed-deep hover:from-neonRed-bright hover:to-neonRed text-foreground shadow-red-glow border border-neonRed-bright/30 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-2 animate-shimmer"
+                "hidden xl:flex h-11 px-5 rounded-full text-xs font-mono tracking-wider uppercase font-bold bg-gradient-to-r from-neonRed to-neonRed-deep hover:from-neonRed-bright hover:to-neonRed text-foreground shadow-red-glow border border-neonRed-bright/30 transition-all duration-300 hover:scale-105 active:scale-95 items-center gap-2 animate-shimmer"
               )}
             >
-              <span>Analyze Information</span>
+              <span>Analyze</span>
               <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
             </Link>
           </MagneticButton>

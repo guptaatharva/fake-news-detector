@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { History, LogOut, Terminal } from "lucide-react";
+import { History, LogOut, Terminal, UserRound } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import Footer from "@/components/ui/Footer";
@@ -84,6 +84,16 @@ export default function DashboardLayout({
               >
                 <History className="mr-2 h-3.5 w-3.5" />
                 History Archive
+              </Button>
+            </Link>
+
+            <Link href="/profile">
+              <Button
+                variant="ghost"
+                className="h-10 px-4 rounded-full text-xs font-mono tracking-wider uppercase text-muted-foreground hover:text-accent hover:bg-graphite-surface hover:border-neonRed/50 transition-all"
+              >
+                <UserRound className="mr-2 h-3.5 w-3.5 text-neonRed" />
+                Profile
               </Button>
             </Link>
 

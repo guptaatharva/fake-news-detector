@@ -37,12 +37,19 @@ export const metadata: Metadata = {
 };
 
 import NavbarWrapper from "@/components/navigation/NavbarWrapper";
+import AuthProvider from "@/components/auth/AuthProvider";
+import { createClient } from "@/lib/supabase/server";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
+
   return (
       <html
         lang="en"
@@ -61,30 +68,32 @@ export default function RootLayout({
             enableSystem={false}
             disableTransitionOnChange
           >
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `
-                  try {
-                    if (!sessionStorage.getItem('veracius_booted')) {
-                      document.documentElement.classList.add('is-booting');
-                    } else {
-                      document.documentElement.classList.add('has-booted');
-                    }
-                  } catch (e) {}
-                `,
-              }}
-            />
-            <BootSequence />
-            <CommandPalette />
-            <BackgroundCanvas />
-            
-            <div className="hide-during-boot">
-              <NavbarWrapper />
-            </div>
+            <AuthProvider initialUser={user}>
+              <script
+                dangerouslySetInnerHTML={{
+                  __html: `
+                    try {
+                      if (!sessionStorage.getItem('veracius_booted')) {
+                        document.documentElement.classList.add('is-booting');
+                      } else {
+                        document.documentElement.classList.add('has-booted');
+                      }
+                    } catch (e) {}
+                  `,
+                }}
+              />
+              <BootSequence />
+              <CommandPalette />
+              <BackgroundCanvas />
+              
+              <div className="hide-during-boot">
+                <NavbarWrapper />
+              </div>
 
-            <div className="relative z-10 hide-during-boot">
-              <PageTransition>{children}</PageTransition>
-            </div>
+              <div className="relative z-10 hide-during-boot">
+                <PageTransition>{children}</PageTransition>
+              </div>
+            </AuthProvider>
           </ThemeProvider>
         </body>
       </html>
