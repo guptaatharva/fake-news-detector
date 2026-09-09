@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { ArrowRight, LogOut, UserRound } from "lucide-react";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import MagneticButton from "@/components/animation/MagneticButton";
 import SystemStatus from "@/components/ui/SystemStatus";
