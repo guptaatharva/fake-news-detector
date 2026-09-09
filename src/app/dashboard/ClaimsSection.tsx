@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ExternalLink, FileText, Link2, ChevronDown, ChevronUp, Newspaper, Smartphone } from "lucide-react";
+import { ExternalLink, FileText, Link2, ChevronDown, Newspaper, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ClaimsSectionProps {
@@ -16,138 +16,184 @@ function isSocialMedia(url: string) {
   return SOCIAL_DOMAINS.some(domain => url.toLowerCase().includes(domain));
 }
 
-function badge(verdict: string) {
+function getVerdictBadgeStyle(verdict: string) {
   switch (verdict) {
-    case "TRUE": return "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
-    case "MOSTLY_TRUE": return "bg-green-500/20 text-green-400 border-green-500/30";
-    case "MIXTURE": return "bg-amber-500/20 text-amber-400 border-amber-500/30";
-    case "MOSTLY_FALSE": return "bg-orange-500/20 text-orange-400 border-orange-500/30";
-    case "FALSE": return "bg-red-500/20 text-red-400 border-red-500/30";
-    default: return "bg-slate-500/20 text-slate-400 border-slate-500/30";
+    case "TRUE":
+    case "MOSTLY_TRUE":
+      return "bg-verificator-verified/15 text-verificator-verified border-verificator-verified/30";
+    case "MIXTURE":
+      return "bg-verificator-warning/15 text-verificator-warning border-verificator-warning/30";
+    case "MOSTLY_FALSE":
+    case "FALSE":
+      return "bg-neonRed/15 text-neonRed border-neonRed/30";
+    default:
+      return "bg-graphite-elevated text-muted-foreground border-graphite-border";
   }
 }
 
-function credibility(color: string) {
-  switch (color) {
-    case "HIGH": return "bg-emerald-500/20 text-emerald-400";
-    case "MEDIUM": return "bg-amber-500/20 text-amber-400";
-    default: return "bg-red-500/20 text-red-400";
+function getCredibilityStyle(cred: string) {
+  switch (cred) {
+    case "HIGH":
+      return "bg-verificator-verified/15 text-verificator-verified border-verificator-verified/30";
+    case "MEDIUM":
+      return "bg-verificator-warning/15 text-verificator-warning border-verificator-warning/30";
+    default:
+      return "bg-neonRed/15 text-neonRed border-neonRed/30";
   }
 }
 
 function EvidenceCard({ ev }: { ev: any }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
-      <div className="flex items-center justify-between">
-        <h5 className="font-semibold text-white line-clamp-2 pr-4">{ev.title}</h5>
-        <span className={`shrink-0 rounded-full px-3 py-1 text-xs ${credibility(ev.credibility)}`}>
-          {ev.credibility}
+    <motion.div
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3 }}
+      className="p-5 rounded-2xl bg-graphite-bg border border-graphite-border space-y-3 hover:border-neonRed/40 transition-colors"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <h5 className="font-display text-sm font-semibold text-foreground line-clamp-2">
+          {ev.title || "Source Reference"}
+        </h5>
+        <span className={`shrink-0 font-mono text-[10px] px-2.5 py-0.5 rounded-full border ${getCredibilityStyle(ev.credibility)}`}>
+          {ev.credibility || "MEDIUM"} CREDIBILITY
         </span>
       </div>
-      <p className="mt-4 italic leading-7 text-gray-400">"{ev.snippet}"</p>
+
+      <p className="text-xs text-muted-foreground italic leading-relaxed border-l-2 border-neonRed/40 pl-3 py-1">
+        "{ev.snippet}"
+      </p>
+
       {ev.sourceUrl && (
         <a
           href={ev.sourceUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-5 inline-flex items-center gap-2 text-teal-400 hover:text-teal-300"
+          className="inline-flex items-center gap-1.5 font-mono text-xs text-neonRed hover:text-neonRed-bright transition-colors pt-1"
         >
-          <ExternalLink className="h-4 w-4" />
-          View Source
+          <ExternalLink className="h-3.5 w-3.5" />
+          <span>Inspect Source Document</span>
         </a>
       )}
-    </div>
+    </motion.div>
   );
 }
 
-function ClaimCard({ claim, index }: { claim: any, index: number }) {
+function ClaimCard({ claim, index }: { claim: any; index: number }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  
+
   const socialEvidence = claim.evidence?.filter((e: any) => isSocialMedia(e.sourceUrl)) || [];
   const newsEvidence = claim.evidence?.filter((e: any) => !isSocialMedia(e.sourceUrl)) || [];
   const totalEvidence = (claim.evidence || []).length;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 25 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
-      className="rounded-3xl border border-white/10 bg-[#101010]/80 backdrop-blur-xl overflow-hidden"
+      initial={{ opacity: 0, y: 25, filter: "blur(6px)" }}
+      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      transition={{ duration: 0.45, delay: index * 0.12, ease: [0.16, 1, 0.3, 1] }}
+      className="surface-card p-6 space-y-5 border border-graphite-border bg-graphite-surface overflow-hidden"
     >
-      <div className="p-8">
-        <div className="flex items-start justify-between gap-5">
-          <div>
-            <h3 className="text-2xl font-semibold text-white">{claim.claimText}</h3>
-            <p className="mt-4 leading-8 text-gray-400">{claim.explanation}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs text-neonRed font-bold">
+              CLAIM #{index + 1}
+            </span>
           </div>
-          <div className={`shrink-0 rounded-full border px-5 py-2 text-sm font-bold ${badge(claim.verdict)}`}>
-            {claim.verdict.replaceAll("_", " ")}
-          </div>
+          <h3 className="font-display text-xl font-bold text-foreground">
+            {claim.claimText}
+          </h3>
         </div>
-
-        {totalEvidence > 0 && (
-          <div className="mt-8">
-            <Button
-              variant="outline"
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="w-full flex justify-between items-center bg-[#181818] border-white/10 text-white hover:bg-[#202020] hover:text-white h-12 rounded-xl"
-            >
-              <span className="font-semibold text-base flex items-center gap-2">
-                <Link2 className="h-4 w-4 text-teal-400" />
-                View Evidence ({totalEvidence} Sources)
-              </span>
-              {isExpanded ? <ChevronUp className="h-5 w-5 text-gray-400" /> : <ChevronDown className="h-5 w-5 text-gray-400" />}
-            </Button>
-
-            <AnimatePresence>
-              {isExpanded && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0, marginTop: 0 }}
-                  animate={{ height: "auto", opacity: 1, marginTop: 24 }}
-                  exit={{ height: 0, opacity: 0, marginTop: 0 }}
-                  className="overflow-hidden space-y-8"
-                >
-                  {newsEvidence.length > 0 && (
-                    <div className="space-y-4">
-                      <h4 className="flex items-center gap-2 text-lg font-semibold text-white">
-                        <Newspaper className="h-5 w-5 text-blue-400" /> News & General Pages
-                      </h4>
-                      <div className="grid gap-4 md:grid-cols-2">
-                        {newsEvidence.map((ev: any, i: number) => <EvidenceCard key={i} ev={ev} />)}
-                      </div>
-                    </div>
-                  )}
-
-                  {socialEvidence.length > 0 && (
-                    <div className="space-y-4">
-                      <h4 className="flex items-center gap-2 text-lg font-semibold text-white">
-                        <Smartphone className="h-5 w-5 text-pink-400" /> Social Media
-                      </h4>
-                      <div className="grid gap-4 md:grid-cols-2">
-                        {socialEvidence.map((ev: any, i: number) => <EvidenceCard key={i} ev={ev} />)}
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        )}
+        <div className={`shrink-0 font-mono text-xs font-bold px-3.5 py-1.5 rounded-full border ${getVerdictBadgeStyle(claim.verdict)}`}>
+          {claim.verdict?.replaceAll("_", " ")}
+        </div>
       </div>
+
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        {claim.explanation}
+      </p>
+
+      {totalEvidence > 0 && (
+        <div className="pt-2 border-t border-graphite-border">
+          <Button
+            variant="outline"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="w-full flex justify-between items-center bg-graphite-bg border-graphite-border text-foreground hover:bg-graphite-elevated hover:border-neonRed/50 hover:shadow-[0_0_15px_rgba(255,23,68,0.2)] h-11 rounded-xl font-mono text-xs uppercase tracking-wider transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <Link2 className="h-4 w-4 text-neonRed" />
+              INSPECT EVIDENCE ({totalEvidence} SOURCES)
+            </span>
+            <ChevronDown
+              className={`h-4 w-4 text-muted-foreground transition-transform duration-300 ${
+                isExpanded ? "rotate-180" : ""
+              }`}
+            />
+          </Button>
+
+          <AnimatePresence>
+            {isExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                animate={{ height: "auto", opacity: 1, marginTop: 16 }}
+                exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                className="overflow-hidden space-y-6"
+              >
+                {newsEvidence.length > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-neonRed-label font-bold">
+                      <Newspaper className="h-4 w-4" /> NEWS & PRIMARY DOCUMENTATION
+                    </h4>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {newsEvidence.map((ev: any, i: number) => (
+                        <EvidenceCard key={i} ev={ev} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {socialEvidence.length > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-neonRed font-bold">
+                      <Smartphone className="h-4 w-4" /> SOCIAL MEDIA & PUBLIC DISCOURSE
+                    </h4>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {socialEvidence.map((ev: any, i: number) => (
+                        <EvidenceCard key={i} ev={ev} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
     </motion.div>
   );
 }
 
 export default function ClaimsSection({ claims }: ClaimsSectionProps) {
+  if (!claims || claims.length === 0) return null;
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <FileText className="h-6 w-6 text-teal-400" />
-        <h2 className="text-3xl font-bold text-white">Claims Breakdown</h2>
+    <div className="space-y-6 pt-4">
+      <motion.div
+        initial={{ opacity: 0, x: -15 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="flex items-center gap-3"
+      >
+        <FileText className="h-5 w-5 text-neonRed" />
+        <h2 className="font-display text-2xl font-bold text-foreground">
+          CLAIMS BREAKDOWN ({claims.length})
+        </h2>
+      </motion.div>
+
+      <div className="space-y-4">
+        {claims.map((claim, index) => (
+          <ClaimCard key={index} claim={claim} index={index} />
+        ))}
       </div>
-      {claims.map((claim, index) => (
-        <ClaimCard key={index} claim={claim} index={index} />
-      ))}
     </div>
   );
 }

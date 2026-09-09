@@ -1,117 +1,97 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-  ShieldCheck,
-  Globe,
-  Search,
-  BrainCircuit,
-  CheckCircle2,
-} from "lucide-react";
-
-import { Card, CardContent } from "@/components/ui/card";
+import { ShieldCheck, Globe, Search, BrainCircuit, CheckCircle2, Sparkles } from "lucide-react";
+import RedSweepBorder from "@/components/animation/RedSweepBorder";
 
 export default function ReadyPanel() {
   const steps = [
     {
       icon: Search,
-      title: "Extract Claims",
-      description: "Identify factual claims from the submitted content.",
+      title: "EXTRACT CLAIMS",
+      description: "Isolates core factual assertions from submitted articles, URLs, or claims.",
+      code: "STAGE_01",
     },
     {
       icon: Globe,
-      title: "Search the Web",
-      description: "Find trusted independent sources in real time.",
+      title: "LIVE WEB SEARCH",
+      description: "Retrieves fresh primary sources and independent news documents in real time.",
+      code: "STAGE_02",
     },
     {
       icon: BrainCircuit,
-      title: "AI Reasoning",
-      description: "Compare evidence using the verification model.",
+      title: "AI REASONING",
+      description: "Corroborates claims against retrieved content to evaluate accuracy and authority.",
+      code: "STAGE_03",
     },
     {
       icon: CheckCircle2,
-      title: "Generate Verdict",
-      description: "Produce a confidence score and explanation.",
+      title: "GENERATE VERDICT",
+      description: "Calculates confidence percentage, evidence matrix, and explainable summary.",
+      code: "STAGE_04",
     },
   ];
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 35 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.6 }}
+      initial={{ opacity: 0, y: 20, filter: "blur(6px)" }}
+      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      transition={{ duration: 0.5 }}
+      className="surface-card p-8 space-y-8 shadow-2xl border border-graphite-border bg-graphite-surface relative overflow-hidden"
     >
-      <Card className="overflow-hidden rounded-3xl border border-white/10 bg-[#101010]/80 backdrop-blur-xl shadow-[0_0_60px_rgba(20,184,166,.08)]">
+      <RedSweepBorder />
 
-        <CardContent className="p-10">
+      <div className="text-center space-y-4 max-w-xl mx-auto">
+        <div className="inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-graphite-elevated border border-graphite-border shadow-red-glow mx-auto">
+          <ShieldCheck className="h-8 w-8 text-neonRed" />
+        </div>
 
-          <div className="flex flex-col items-center text-center">
+        <h2 className="font-display text-3xl font-bold text-foreground">
+          INTELLIGENCE WORKSPACE READY
+        </h2>
 
-            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-teal-500/20 to-blue-600/20">
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Paste a news article, URL, or claim on the left to begin an autonomous AI verification. VeraCius will query the live web, evaluate sources, and deliver a transparent report.
+        </p>
+      </div>
 
-              <ShieldCheck className="h-12 w-12 text-teal-400" />
+      <div className="grid gap-4 sm:grid-cols-2 pt-2">
+        {steps.map((step, i) => {
+          const Icon = step.icon;
+          return (
+            <motion.div
+              key={step.title}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1, duration: 0.4 }}
+              className="p-5 rounded-2xl bg-graphite-bg border border-graphite-border space-y-3 hover:border-neonRed/40 transition-colors"
+            >
+              <div className="flex items-center justify-between">
+                <div className="p-2.5 rounded-xl bg-graphite-elevated border border-graphite-border">
+                  <Icon className="h-5 w-5 text-neonRed" />
+                </div>
+                <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest">
+                  {step.code}
+                </span>
+              </div>
 
-            </div>
+              <div>
+                <h3 className="font-display text-sm font-bold text-foreground">
+                  {step.title}
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed mt-1">
+                  {step.description}
+                </p>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
 
-            <h2 className="mt-8 text-4xl font-bold text-white">
-              Ready to Verify
-            </h2>
-
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-gray-400">
-              Paste a news article or URL to begin a complete AI-powered
-              verification. VeriLens searches the web, gathers evidence,
-              compares sources and generates a transparent verdict.
-            </p>
-
-          </div>
-
-          <div className="mt-14 grid gap-5 md:grid-cols-2">
-
-            {steps.map((step, index) => {
-              const Icon = step.icon;
-
-              return (
-                <motion.div
-                  key={step.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    delay: 0.2 + index * 0.1,
-                  }}
-                  className="rounded-2xl border border-white/10 bg-black/20 p-6 transition-all duration-300 hover:border-teal-500/40 hover:bg-black/30"
-                >
-                  <div className="flex items-start gap-4">
-
-                    <div className="rounded-xl bg-gradient-to-br from-teal-500/20 to-blue-600/20 p-3">
-
-                      <Icon className="h-6 w-6 text-teal-400" />
-
-                    </div>
-
-                    <div>
-
-                      <h3 className="text-lg font-semibold text-white">
-                        {step.title}
-                      </h3>
-
-                      <p className="mt-2 text-sm leading-6 text-gray-400">
-                        {step.description}
-                      </p>
-
-                    </div>
-
-                  </div>
-                </motion.div>
-              );
-            })}
-
-          </div>
-
-          
-
-        </CardContent>
-
-      </Card>
+      <div className="p-4 rounded-2xl bg-graphite-bg/60 border border-graphite-border text-center font-mono text-xs text-muted-foreground flex items-center justify-center gap-2">
+        <Sparkles className="h-4 w-4 text-neonRed animate-pulse" />
+        <span>SYSTEM IDLE — AWAITING USER INPUT</span>
+      </div>
     </motion.div>
   );
 }

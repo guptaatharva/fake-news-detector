@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ShieldCheck, Link2, FileText, Loader2, ImageIcon, FileUp } from "lucide-react";
+import { ShieldCheck, Link2, FileText, Loader2, ImageIcon, FileUp, MessageSquare } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -25,145 +24,199 @@ export default function VerifyCard({
   setText,
   handleAnalyze,
 }: VerifyCardProps) {
-  const [mode, setMode] = useState<"url" | "text">("url");
+  const [mode, setMode] = useState<"url" | "text" | "claim">("url");
+  const [claimInput, setClaimInput] = useState("");
 
-  const words =
-    text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
+  const words = text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
+
+  const handleClaimSubmit = () => {
+    setText(claimInput);
+    handleAnalyze("text");
+  };
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: -30 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5 }}
+      initial={{ opacity: 0, y: 20, filter: "blur(6px)" }}
+      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      className="surface-card p-6 lg:p-8 space-y-6 shadow-xl border border-graphite-border bg-graphite-surface"
     >
-      <Card className="overflow-hidden rounded-3xl border border-white/10 bg-[#101010]/80 backdrop-blur-xl shadow-[0_0_60px_rgba(20,184,166,.08)]">
-        <CardHeader className="border-b border-white/10 px-8 py-6">
+      {/* Header */}
+      <div className="flex items-center gap-4 pb-6 border-b border-graphite-border">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-graphite-elevated border border-graphite-border shadow-red-glow">
+          <ShieldCheck className="h-6 w-6 text-neonRed" />
+        </div>
+        <div>
+          <h2 className="font-display text-2xl font-bold text-foreground">
+            VERIFY INFORMATION
+          </h2>
+          <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
+            GIVE VERACIUS SOMETHING TO INVESTIGATE
+          </p>
+        </div>
+      </div>
 
-  <div className="flex items-center gap-4">
+      {/* Mode Selector Tabs with Animated Sliding Pill */}
+      <div className="grid grid-cols-3 rounded-2xl bg-graphite-bg p-1 border border-graphite-border relative">
+        {(["url", "text", "claim"] as const).map((tabMode) => {
+          const isActive = mode === tabMode;
+          const label = tabMode.toUpperCase();
+          const Icon = tabMode === "url" ? Link2 : tabMode === "text" ? FileText : MessageSquare;
 
-    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500/20 to-blue-600/20">
-
-      <ShieldCheck className="h-7 w-7 text-teal-400" />
-
-    </div>
-
-    <div>
-
-      <CardTitle className="text-3xl font-bold text-white">
-        Verify Content
-      </CardTitle>
-
-      <p className="mt-1 text-gray-400">
-        Paste a URL or article to begin AI-powered verification.
-      </p>
-
-    </div>
-
-  </div>
-
-</CardHeader>
-
-        <CardContent className="space-y-8 p-8">
-          <div className="grid grid-cols-2 rounded-2xl bg-[#181818] p-1">
+          return (
             <button
+              key={tabMode}
               type="button"
-              onClick={() => setMode("url")}
-              className={`flex h-14 items-center justify-center gap-2 rounded-xl font-medium transition ${
-                mode === "url"
-                  ? "bg-gradient-to-r from-teal-500 to-blue-600 text-white"
-                  : "text-gray-400 hover:text-white"
-              }`}
+              onClick={() => setMode(tabMode)}
+              className="relative flex h-11 items-center justify-center gap-2 rounded-xl text-xs font-mono tracking-wider transition-colors z-10 font-bold"
             >
-              <Link2 className="h-4 w-4" />
-              URL
+              {isActive && (
+                <motion.div
+                  layoutId="verify-mode-tab"
+                  transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                  className="absolute inset-0 rounded-xl bg-gradient-to-r from-neonRed to-neonRed-deep shadow-red-glow"
+                />
+              )}
+              <Icon className={`h-3.5 w-3.5 relative z-10 ${isActive ? "text-foreground" : "text-muted-foreground"}`} />
+              <span className={`relative z-10 ${isActive ? "text-foreground" : "text-muted-foreground"}`}>
+                {label}
+              </span>
             </button>
+          );
+        })}
+      </div>
 
-            <button
-              type="button"
-              onClick={() => setMode("text")}
-              className={`flex h-14 items-center justify-center gap-2 rounded-xl font-medium transition ${
-                mode === "text"
-                  ? "bg-gradient-to-r from-teal-500 to-blue-600 text-white"
-                  : "text-gray-400 hover:text-white"
-              }`}
-            >
-              <FileText className="h-4 w-4" />
-              Text
-            </button>
+      {/* Input Workspaces */}
+      {mode === "url" && (
+        <motion.div
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3 }}
+          className="space-y-4"
+        >
+          <div className="space-y-2">
+            <label className="font-mono text-xs text-muted-foreground uppercase tracking-wider">
+              ARTICLE OR WEBPAGE URL
+            </label>
+            <Input
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://news-website.com/article/12345..."
+              disabled={isLoading}
+              className="h-14 rounded-2xl border-graphite-border bg-graphite-bg px-5 font-mono text-sm text-foreground focus:border-[#FF1744] focus:ring-1 focus:ring-[#FF1744] shadow-none focus:shadow-red-focus transition-all duration-300"
+            />
           </div>
 
-          {mode === "url" ? (
-            <div className="space-y-6">
-              <Input
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://example.com/news/article"
-                disabled={isLoading}
-                className="h-16 rounded-2xl border-white/10 bg-black/40 text-white"
-              />
+          <Button
+            onClick={() => handleAnalyze("url")}
+            disabled={!url || isLoading}
+            className="h-14 w-full rounded-2xl bg-gradient-to-r from-neonRed to-neonRed-deep hover:from-neonRed-bright hover:to-neonRed text-foreground font-mono text-sm tracking-wider uppercase font-bold shadow-red-glow border border-neonRed-bright/30 transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] animate-shimmer"
+          >
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                RUNNING VERIFICATION PIPELINE...
+              </span>
+            ) : (
+              "RUN VERIFICATION"
+            )}
+          </Button>
+        </motion.div>
+      )}
 
-              <Button
-                onClick={() => handleAnalyze("url")}
-                disabled={!url || isLoading}
-                className="h-16 w-full rounded-2xl bg-gradient-to-r from-teal-500 to-blue-600 text-lg font-semibold"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Verifying...
-                  </>
-                ) : (
-                  "Analyze URL"
-                )}
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <Textarea
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="Paste the article, news report or social media claim here..."
-                disabled={isLoading}
-                className="min-h-[260px] rounded-2xl border-white/10 bg-black/40 px-5 py-4 text-white"
-              />
-
-              <div className="flex items-center justify-between text-sm text-gray-400">
-                <span>Words: <span className="font-semibold text-white">{words}</span></span>
-                <span>Characters: <span className="font-semibold text-white">{text.length}</span></span>
-              </div>
-
-              <Button
-                onClick={() => handleAnalyze("text")}
-                disabled={text.length < 50 || isLoading}
-                className="h-16 w-full rounded-2xl bg-gradient-to-r from-teal-500 to-blue-600 text-lg font-semibold"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Verifying...
-                  </>
-                ) : (
-                  "Analyze Text"
-                )}
-              </Button>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-5">
-            <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center">
-              <ImageIcon className="mx-auto mb-4 h-9 w-9 text-teal-400" />
-              <p className="font-medium text-white">Screenshot Upload</p>
-              <p className="mt-2 text-sm text-gray-500">Coming Soon</p>
-            </div>
-
-            <div className="rounded-2xl border border-dashed border-white/10 p-8 text-center">
-              <FileUp className="mx-auto mb-4 h-9 w-9 text-blue-400" />
-              <p className="font-medium text-white">PDF Upload</p>
-              <p className="mt-2 text-sm text-gray-500">Coming Soon</p>
-            </div>
+      {mode === "text" && (
+        <motion.div
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3 }}
+          className="space-y-4"
+        >
+          <div className="space-y-2">
+            <label className="font-mono text-xs text-muted-foreground uppercase tracking-wider">
+              ARTICLE TEXT OR SOCIAL PASSAGE
+            </label>
+            <Textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Paste the news report, social media claim, or article body here..."
+              disabled={isLoading}
+              className="min-h-[200px] rounded-2xl border-graphite-border bg-graphite-bg p-5 font-sans text-sm text-foreground focus:border-[#FF1744] focus:ring-1 focus:ring-[#FF1744] focus:shadow-red-focus transition-all duration-300 leading-relaxed"
+            />
           </div>
-        </CardContent>
-      </Card>
+
+          <div className="flex items-center justify-between text-xs font-mono text-muted-foreground">
+            <span>WORDS: <strong className="text-neonRed-label">{words}</strong></span>
+            <span>CHARACTERS: <strong className="text-neonRed-label">{text.length}</strong></span>
+          </div>
+
+          <Button
+            onClick={() => handleAnalyze("text")}
+            disabled={text.length < 20 || isLoading}
+            className="h-14 w-full rounded-2xl bg-gradient-to-r from-neonRed to-neonRed-deep hover:from-neonRed-bright hover:to-neonRed text-foreground font-mono text-sm tracking-wider uppercase font-bold shadow-red-glow border border-neonRed-bright/30 transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] animate-shimmer"
+          >
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                RUNNING VERIFICATION PIPELINE...
+              </span>
+            ) : (
+              "RUN VERIFICATION"
+            )}
+          </Button>
+        </motion.div>
+      )}
+
+      {mode === "claim" && (
+        <motion.div
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3 }}
+          className="space-y-4"
+        >
+          <div className="space-y-2">
+            <label className="font-mono text-xs text-muted-foreground uppercase tracking-wider">
+              SPECIFIC FACTUAL CLAIM
+            </label>
+            <Input
+              value={claimInput}
+              onChange={(e) => setClaimInput(e.target.value)}
+              placeholder="e.g., 'Global renewable energy output surpassed 40% in 2025.'"
+              disabled={isLoading}
+              className="h-14 rounded-2xl border-graphite-border bg-graphite-bg px-5 font-sans text-sm text-foreground focus:border-[#FF1744] focus:ring-1 focus:ring-[#FF1744] focus:shadow-red-focus transition-all duration-300"
+            />
+          </div>
+
+          <Button
+            onClick={handleClaimSubmit}
+            disabled={!claimInput || isLoading}
+            className="h-14 w-full rounded-2xl bg-gradient-to-r from-neonRed to-neonRed-deep hover:from-neonRed-bright hover:to-neonRed text-foreground font-mono text-sm tracking-wider uppercase font-bold shadow-red-glow border border-neonRed-bright/30 transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] animate-shimmer"
+          >
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                RUNNING VERIFICATION PIPELINE...
+              </span>
+            ) : (
+              "RUN VERIFICATION"
+            )}
+          </Button>
+        </motion.div>
+      )}
+
+      {/* Auxiliary Dropzones Teaser */}
+      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-graphite-border">
+        <div className="p-4 rounded-2xl border border-dashed border-graphite-border bg-graphite-bg/60 text-center space-y-1 hover:border-neonRed/40 transition-colors">
+          <ImageIcon className="mx-auto h-5 w-5 text-muted-foreground" />
+          <p className="font-mono text-xs font-semibold text-foreground">SCREENSHOT UPLOAD</p>
+          <p className="font-mono text-[10px] text-neonRed-label">FEATURE IN BETA</p>
+        </div>
+
+        <div className="p-4 rounded-2xl border border-dashed border-graphite-border bg-graphite-bg/60 text-center space-y-1 hover:border-neonRed/40 transition-colors">
+          <FileUp className="mx-auto h-5 w-5 text-muted-foreground" />
+          <p className="font-mono text-xs font-semibold text-foreground">DOCUMENT / PDF</p>
+          <p className="font-mono text-[10px] text-neonRed-bright">FEATURE IN BETA</p>
+        </div>
+      </div>
     </motion.div>
   );
 }

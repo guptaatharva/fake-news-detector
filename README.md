@@ -1,6 +1,6 @@
-# VeriLens AI
+# VeraCius AI
 
-VeriLens is a next-generation, AI-powered news verification platform. It doesn't just rely on an LLM's pre-trained memory—it actively functions as an **Autonomous Fact-Checking Agent** by searching the live internet and scraping evidence in real-time to combat fake news and misinformation.
+VeraCius is a next-generation, AI-powered news verification platform. It doesn't just rely on an LLM's pre-trained memory—it actively functions as an **Autonomous Fact-Checking Agent** by searching the live internet and scraping evidence in real-time to combat fake news and misinformation.
 
 ## 🚀 Key Features
 
@@ -23,7 +23,7 @@ When you submit a URL or text snippet, VeriLens executes the following atomic st
 ## 💻 Tech Stack
 
 * **Frontend**: Next.js 15 (App Router), React, Tailwind CSS, shadcn/ui, Lucide Icons.
-* **Backend**: Node.js API Routes, Vercel AI SDK (`@ai-sdk/openai-compatible`).
+* **Backend**: Node.js API Routes, Vercel AI SDK (`@ai-sdk/google`).
 * **Scraping Engine**: Puppeteer, `@mozilla/readability`, Cheerio, JSDOM.
 * **Database & Auth**: Prisma ORM, Supabase (PostgreSQL), NextAuth.js.
 
@@ -31,7 +31,7 @@ When you submit a URL or text snippet, VeriLens executes the following atomic st
 
 ### Prerequisites
 * Node.js (v18+)
-* An NVIDIA API Key (for the NIM Llama 3.1 endpoint)
+* A Google Gemini API Key
 * A Supabase PostgreSQL database URL
 
 ### Installation
@@ -46,7 +46,7 @@ When you submit a URL or text snippet, VeriLens executes the following atomic st
    ```env
    DATABASE_URL="postgres://your_supabase_url_here"
    AUTH_SECRET="your_nextauth_secret"
-   NVIDIA_API_KEY="your_nvidia_nim_api_key_here"
+   GEMINI_API_KEY="your_gemini_api_key_here"
    ```
 
 3. **Initialize the Database:**

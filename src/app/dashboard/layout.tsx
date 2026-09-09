@@ -1,107 +1,115 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { History, LogOut, Terminal } from "lucide-react";
 import Image from "next/image";
-import { LogOut, History, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logo from "../logo.png";
+import Footer from "@/components/ui/Footer";
+import SystemStatus from "@/components/ui/SystemStatus";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#050505] text-white">
-
-      {/* Aurora Glow */}
-      <div className="pointer-events-none absolute inset-0 -z-20 overflow-hidden">
-        <div className="absolute -top-48 left-1/2 h-[900px] w-[900px] -translate-x-1/2 rounded-full bg-teal-500/10 blur-[180px]" />
-
-        <div className="absolute bottom-0 -left-40 h-[650px] w-[650px] rounded-full bg-cyan-500/10 blur-[180px]" />
-
-        <div className="absolute top-40 -right-40 h-[650px] w-[650px] rounded-full bg-blue-500/10 blur-[180px]" />
-      </div>
-
-      {/* Background Grid */}
-      <div
-        className="absolute inset-0 -z-10 opacity-[0.04]"
-        style={{
-          backgroundImage: `
-            linear-gradient(to right,#ffffff 1px,transparent 1px),
-            linear-gradient(to bottom,#ffffff 1px,transparent 1px)
-          `,
-          backgroundSize: "40px 40px",
-        }}
-      />
-
-      {/* Navbar */}
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-black/45 backdrop-blur-xl">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-8">
-
-          {/* Logo */}
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-3 transition hover:opacity-90"
-          >
-            <Image
-              src={logo}
-              alt="VeriLens"
-              width={46}
-              height={46}
-              priority
-            />
-
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">
-                VeriLens
-              </h1>
-
-              <p className="text-xs text-teal-400">
-                AI Fact Checker
-              </p>
+    <div className="min-h-screen bg-transparent text-foreground flex flex-col font-sans selection:bg-neonRed/30 selection:text-neonRed-bright">
+      {/* Command Dashboard Navbar */}
+      <header className="sticky top-0 z-50 border-b border-graphite-border bg-graphite-surface/90 backdrop-blur-xl">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-8">
+          {/* Logo & Workspace Title */}
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3 group">
+              <Link href="/">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-graphite-elevated border border-graphite-border group-hover:border-neonRed/50 transition-colors">
+                  <Image 
+                    src="/red-logo.png" 
+                    alt="Veracius Logo" 
+                    width={20} 
+                    height={20} 
+                    className="group-hover:scale-110 transition-transform duration-300 object-contain drop-shadow-[0_0_8px_rgba(255,23,68,0.8)]" 
+                  />
+                </div>
+              </Link>
+              <Link href="/dashboard" className="flex flex-col">
+                <span className="font-display font-bold tracking-wider text-foreground">VERACIUS</span>
+                <span className="text-[10px] font-mono text-neonRed uppercase tracking-widest">Command Core</span>
+              </Link>
             </div>
-          </Link>
+            <div className="hidden lg:block">
+              <SystemStatus />
+            </div>
 
-          {/* Navigation */}
-          <div className="flex items-center gap-4">
+            <div className="hidden sm:flex h-6 w-px bg-[#241014]" />
 
+            <div className="hidden sm:flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neonRed opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-neonRed"></span>
+              </span>
+              <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider">
+                ENGINE ACTIVE
+              </span>
+            </div>
+          </div>
+
+          {/* Navigation Controls */}
+          <div className="flex items-center gap-3">
             <Link href="/dashboard">
               <Button
                 variant="ghost"
-                className="rounded-full text-white hover:bg-white/10"
+                className={`h-10 px-4 rounded-full text-xs font-mono tracking-wider uppercase transition-all ${
+                  pathname === "/dashboard"
+                    ? "bg-graphite-elevated text-foreground border border-graphite-border-sec shadow-[0_0_15px_rgba(255,23,68,0.15)] font-semibold"
+                    : "text-muted-foreground hover:text-accent hover:bg-graphite-surface hover:border-neonRed/50 hover:shadow-[0_0_15px_rgba(255,23,68,0.2)]"
+                }`}
               >
-                <Home className="mr-2 h-4 w-4" />
-                Analyze
+                <Terminal className="mr-2 h-3.5 w-3.5" />
+                Analyze Workspace
               </Button>
             </Link>
 
             <Link href="/dashboard/history">
               <Button
                 variant="ghost"
-                className="rounded-full text-white hover:bg-white/10"
+                className={`h-10 px-4 rounded-full text-xs font-mono tracking-wider uppercase transition-all ${
+                  pathname === "/dashboard/history"
+                    ? "bg-graphite-elevated text-foreground border border-graphite-border-sec shadow-[0_0_15px_rgba(255,23,68,0.15)] font-semibold"
+                    : "text-muted-foreground hover:text-accent hover:bg-graphite-surface hover:border-neonRed/50 hover:shadow-[0_0_15px_rgba(255,23,68,0.2)]"
+                }`}
               >
-                <History className="mr-2 h-4 w-4" />
-                History
+                <History className="mr-2 h-3.5 w-3.5" />
+                History Archive
               </Button>
             </Link>
 
-            <div className="h-8 w-px bg-white/10" />
+            <div className="h-6 w-px bg-[#241014] mx-1" />
+
+            <ThemeToggle />
 
             <Link href="/">
-              <Button className="rounded-full bg-gradient-to-r from-rose-500 to-red-600 px-6 hover:scale-105 transition-all">
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
+              <Button
+                variant="outline"
+                className="h-10 px-4 rounded-full text-xs font-mono text-muted-foreground hover:text-accent border-border hover:bg-accent/10"
+              >
+                <LogOut className="mr-2 h-3.5 w-3.5" />
+                Exit
               </Button>
             </Link>
-
           </div>
         </div>
       </header>
 
-      {/* Main */}
-      <main className="relative z-10 mx-auto max-w-7xl px-6 py-10 lg:px-8">
+      {/* Main Workspace Canvas */}
+      <main className="flex-1 mx-auto max-w-7xl w-full px-6 py-8 lg:px-8">
         {children}
       </main>
 
+      <Footer />
     </div>
   );
 }

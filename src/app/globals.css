@@ -5,59 +5,215 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 240 10% 4%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 240 10% 4%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    --popover-foreground: 240 10% 4%;
+    --primary: 348 100% 54%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 6% 10%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 348 100% 54%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 348 100% 40%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 348 100% 54%;
+    --radius: 1rem;
+    
+    --accent-glow: 348 100% 54%;
+    --grid: 240 6% 90%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --background: 0 0% 1.2%;
+    --foreground: 0 0% 96%;
+    --card: 240 8% 4.7%;
+    --card-foreground: 0 0% 96%;
+    --popover: 240 8% 4.7%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 348 100% 54%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 8% 6.7%;
+    --secondary-foreground: 0 0% 96%;
+    --muted: 240 5% 12%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 348 100% 54%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 348 100% 40%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 345 38% 10.2%;
+    --input: 345 38% 10.2%;
+    --ring: 348 100% 54%;
+    --radius: 1rem;
+    
+    --accent-glow: 348 100% 54%;
+    --grid: 345 38% 10.2%;
   }
-}
 
-@layer base {
-  * {
-    @apply border-border;
-  }
   body {
-    @apply bg-background text-foreground;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-sans), system-ui, sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* Boot Sequence Loading States */
+  .hide-during-boot {
+    transition: opacity 0.8s ease-in-out, visibility 0.8s ease-in-out;
+  }
+  
+  html.is-booting .hide-during-boot {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+  
+  html.has-booted #veracius-boot-sequence {
+    display: none !important;
+  }
+
+  /* Custom Red Text Selection */
+  ::selection {
+    background-color: hsl(var(--accent));
+    color: #FFFFFF;
   }
 }
 
-html{
-    scroll-behavior:smooth;
+/* Custom Futuristic Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: hsl(var(--secondary));
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+  border: 1px solid hsl(var(--border));
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--accent));
+  box-shadow: 0 0 10px rgba(255, 23, 68, 0.5);
+}
+
+/* Atmospheric Red Glow Radial Gradients */
+.bg-red-glow-bg {
+  background: radial-gradient(circle at 50% 30%, hsla(var(--accent), 0.12) 0%, hsla(var(--accent), 0.05) 45%, transparent 70%);
+}
+
+.bg-red-glow-card {
+  background: radial-gradient(circle at top left, hsla(var(--accent), 0.08) 0%, transparent 60%);
+}
+
+/* Tech Grid Background Pattern */
+.bg-tech-grid {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, hsla(var(--grid), 0.6) 1px, transparent 1px),
+    linear-gradient(to bottom, hsla(var(--grid), 0.6) 1px, transparent 1px);
+}
+
+/* Shimmer Light Sweep for Buttons & Skeletons */
+@keyframes shimmerSweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+.animate-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.animate-shimmer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 23, 68, 0.18) 50%,
+    transparent 100%
+  );
+  animation: shimmerSweep 3s infinite linear;
+}
+
+/* Pulse Dot Animation for Live Status */
+@keyframes livePulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 0.5;
+  }
+}
+
+.animate-live-pulse {
+  animation: livePulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Card Hover Elevation Utility */
+.surface-card {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 1.5rem;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.surface-card-hover:hover {
+  transform: translateY(-2px) scale(1.01);
+  border-color: hsl(var(--accent));
+  box-shadow: 0 10px 30px -10px hsla(var(--accent), 0.15);
+}
+
+/* Accessibility: Prefers Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-shimmer::after {
+    animation: none !important;
+  }
+  .animate-live-pulse {
+    animation: none !important;
+  }
+}
+
+/* ========================================= */
+/* LIGHT MODE HOVER TEXT OVERRIDES           */
+/* Forces all interactive hover text/icons   */
+/* to black (#000000) in Light Mode only     */
+/* ========================================= */
+html.light [class*="hover:text-"]:hover,
+html.light .group:hover [class*="group-hover:text-"],
+html:not(.dark) [class*="hover:text-"]:hover,
+html:not(.dark) .group:hover [class*="group-hover:text-"] {
+  color: #000000 !important;
+}
+
+html.light button:hover,
+html.light a:hover,
+html:not(.dark) button:hover,
+html:not(.dark) a:hover {
+  color: #000000 !important;
 }
