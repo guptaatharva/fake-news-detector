@@ -9,6 +9,7 @@ import CommandPalette from "@/components/navigation/CommandPalette";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import NavbarWrapper from "@/components/navigation/NavbarWrapper";
 import AuthProvider from "@/components/auth/AuthProvider";
+import { AnalysisProvider } from "@/context/AnalysisContext";
 import { createClient } from "@/lib/supabase/server";
 
 const inter = Inter({
@@ -68,30 +69,32 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider initialUser={user}>
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `
-                  try {
-                    if (!sessionStorage.getItem('veracius_booted')) {
-                      document.documentElement.classList.add('is-booting');
-                    } else {
-                      document.documentElement.classList.add('has-booted');
-                    }
-                  } catch (e) {}
-                `,
-              }}
-            />
-            <BootSequence />
-            <CommandPalette />
-            <BackgroundCanvas />
-            
-            <div className="hide-during-boot">
-              <NavbarWrapper />
-            </div>
+            <AnalysisProvider>
+              <script
+                dangerouslySetInnerHTML={{
+                  __html: `
+                    try {
+                      if (!sessionStorage.getItem('veracius_booted')) {
+                        document.documentElement.classList.add('is-booting');
+                      } else {
+                        document.documentElement.classList.add('has-booted');
+                      }
+                    } catch (e) {}
+                  `,
+                }}
+              />
+              <BootSequence />
+              <CommandPalette />
+              <BackgroundCanvas />
+              
+              <div className="hide-during-boot">
+                <NavbarWrapper />
+              </div>
 
-            <div className="relative z-10 hide-during-boot">
-              <PageTransition>{children}</PageTransition>
-            </div>
+              <div className="relative z-10 hide-during-boot">
+                <PageTransition>{children}</PageTransition>
+              </div>
+            </AnalysisProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

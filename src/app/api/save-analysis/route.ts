@@ -1,12 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { createClient } from '@/lib/supabase/server';
-
-// Reuse PrismaClient instance if possible in next
-const globalForPrisma = global as unknown as { prisma: PrismaClient };
-const prisma = globalForPrisma.prisma || new PrismaClient();
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,21 +34,20 @@ export async function POST(req: NextRequest) {
         sourceUrl: sourceUrl || null,
         textContent: textContent || null,
         verdict: result.verdict,
-        confidence: result.confidenceScore,
-        scoreBreakdown: result.scoreBreakdown,
-        summary: result.summary,
+        confidence: Number(result.confidenceScore) || 0,
+        scoreBreakdown: result.scoreBreakdown || null,
+        summary: result.summary || '',
         claims: {
-          create: result.claims.map((claim: any) => ({
-            claimText: claim.claimText,
-            verdict: claim.verdict,
-            explanation: claim.explanation,
+          create: (result.claims || []).map((claim: any) => ({
+            claimText: claim.claimText || claim.text || '',
+            verdict: claim.verdict || 'UNVERIFIED',
             evidence: {
-              create: claim.evidence?.map((ev: any) => ({
-                sourceUrl: ev.sourceUrl || '',
-                title: ev.title,
-                snippet: ev.snippet,
-                credibility: ev.credibility,
-              })) || []
+              create: (claim.evidence || []).map((ev: any) => ({
+                sourceUrl: ev.sourceUrl || ev.url || '',
+                title: ev.title || 'Source Reference',
+                snippet: ev.snippet || '',
+                credibility: ev.credibility || 'HIGH',
+              }))
             }
           }))
         }
@@ -61,8 +55,11 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(analysis);
-  } catch (error) {
-    console.error('Failed to save analysis:', error);
-    return NextResponse.json({ error: 'Failed to save analysis' }, { status: 500 });
+  } catch (error: any) {
+    console.error('[Save Analysis API] Database error:', error?.message || error);
+    return NextResponse.json(
+      { error: 'Could not save analysis to database history at this time.' },
+      { status: 503 }
+    );
   }
 }

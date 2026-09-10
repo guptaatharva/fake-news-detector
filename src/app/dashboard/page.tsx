@@ -9,72 +9,34 @@ import VerificationCore from "@/components/dashboard/VerificationCore";
 import EvidenceGraph from "@/components/dashboard/EvidenceGraph";
 import IntelligenceReport from "@/components/dashboard/IntelligenceReport";
 import ClaimDecomposition from "@/components/dashboard/ClaimDecomposition";
-
-interface Evidence {
-  sourceUrl?: string;
-  url?: string;
-  title: string;
-  snippet: string;
-  publisher?: string;
-  source?: string;
-  domain?: string;
-  summary?: string;
-  credibility: "HIGH" | "MEDIUM" | "LOW";
-}
-
-interface Claim {
-  claimText: string;
-  verdict: "TRUE" | "MOSTLY_TRUE" | "MIXTURE" | "MOSTLY_FALSE" | "FALSE" | "UNVERIFIABLE";
-  explanation: string;
-  evidence?: Evidence[];
-}
-
-interface ScrapedSource {
-  title: string;
-  source: string;
-  domain: string;
-  url: string;
-  sourceUrl: string;
-  link: string;
-  snippet: string;
-  content: string;
-  publishedAt?: string;
-}
-
-interface AnalysisResult {
-  verdict: "TRUE" | "MOSTLY_TRUE" | "MIXTURE" | "MOSTLY_FALSE" | "FALSE" | "UNVERIFIABLE";
-  confidenceScore: number;
-  scoreBreakdown: string;
-  summary: string;
-  claims: Claim[];
-  sourceDomains?: string[];
-  extractedSources?: ScrapedSource[];
-}
+import { useAnalysis, type AnalysisResult, type ScrapedSource } from "@/context/AnalysisContext";
+import { AlertTriangle, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // Helpers for source summary, domain, and publisher extraction
 function extractCleanDomain(rawUrl?: string): string {
-  if (!rawUrl) return '';
+  if (!rawUrl) return "";
   try {
-    return new URL(rawUrl).hostname.replace(/^www\./, '').toLowerCase();
+    return new URL(rawUrl).hostname.replace(/^www\./, "").toLowerCase();
   } catch {
-    return '';
+    return "";
   }
 }
 
 function formatPublisherFromDomain(domain: string): string {
-  if (!domain) return 'Publisher';
-  const name = domain.split('.')[0];
+  if (!domain) return "Publisher";
+  const name = domain.split(".")[0];
   return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
 function extractConciseSummary(content?: string, title?: string, snippet?: string, maxWords = 35): string {
   if (content && content.trim().length > 30) {
-    const clean = content.replace(/\s+/g, ' ').trim();
+    const clean = content.replace(/\s+/g, " ").trim();
     const sentenceMatch = clean.match(/^([^.!?]+[.!?](?:\s*[^.!?]+[.!?])?)/);
     let summary = sentenceMatch ? sentenceMatch[1].trim() : clean;
-    const words = summary.split(' ');
+    const words = summary.split(" ");
     if (words.length > maxWords) {
-      summary = words.slice(0, maxWords).join(' ') + '...';
+      summary = words.slice(0, maxWords).join(" ") + "...";
     }
     return summary;
   }
@@ -84,10 +46,10 @@ function extractConciseSummary(content?: string, title?: string, snippet?: strin
   if (title && title.trim().length > 15) {
     return title.trim();
   }
-  return 'Independent reporting on the factual assertions related to this claim.';
+  return "Independent reporting on the factual assertions related to this claim.";
 }
 
-// Helper to map backend verdicts to the new UI verdicts
+// Helper to map backend verdicts to the UI verdicts
 const mapVerdict = (v: string): "VERIFIED" | "PARTIALLY VERIFIED" | "MISLEADING" | "UNVERIFIED" | "FALSE" => {
   switch (v) {
     case "TRUE": return "VERIFIED";
@@ -101,33 +63,44 @@ const mapVerdict = (v: string): "VERIFIED" | "PARTIALLY VERIFIED" | "MISLEADING"
 };
 
 export default function DashboardPage() {
-  const [url, setUrl] = useState("");
-  const [text, setText] = useState("");
+  const {
+    result,
+    url,
+    text,
+    stage,
+    logs,
+    error,
+    dbSaveState,
+    setUrl,
+    setText,
+    setStage,
+    setLogs,
+    addLog,
+    setError,
+    setAnalysisResult,
+    setDbSaveState,
+    resetAnalysis,
+  } = useAnalysis();
+
   const [isLoading, setIsLoading] = useState(false);
-  const [stage, setStage] = useState<"idle" | "extracting" | "searching" | "synthesizing" | "complete">("idle");
-  const [logs, setLogs] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<AnalysisResult | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const urlParam = params.get("url");
-      if (urlParam) {
+      if (urlParam && !url) {
         setUrl(urlParam);
       }
     }
-  }, []);
+  }, [url, setUrl]);
 
   const handleAnalyze = async (mode: "url" | "text") => {
     setIsLoading(true);
     setStage("extracting");
     setError(null);
-    setResult(null);
+    setAnalysisResult(null);
     setLogs([]);
-
-    const addLog = (msg: string) =>
-      setLogs((prev) => [...prev, `[${new Date().toLocaleTimeString([], { hour12: false })}] ${msg}`]);
+    setDbSaveState({ status: "idle" });
 
     try {
       addLog(`Initializing analysis for ${mode.toUpperCase()} input...`);
@@ -179,13 +152,13 @@ export default function DashboardPage() {
           for (const resItem of results) {
             const targetUrl = resItem.sourceUrl || resItem.link;
             // Ensure no duplicate scrapes and never scrape Google News redirect links
-            if (!targetUrl || processedUrls.has(targetUrl) || targetUrl.includes('news.google.com')) continue;
+            if (!targetUrl || processedUrls.has(targetUrl) || targetUrl.includes("news.google.com")) continue;
             processedUrls.add(targetUrl);
 
             try {
               let host = resItem.domain;
               if (!host) {
-                host = new URL(targetUrl).hostname.replace(/^www\./, '').toLowerCase();
+                host = new URL(targetUrl).hostname.replace(/^www\./, "").toLowerCase();
               }
               const sourceName = resItem.source || host;
 
@@ -198,7 +171,7 @@ export default function DashboardPage() {
               const scrapeData = await scrapeResponse.json();
 
               if (scrapeResponse.ok && scrapeData.text && scrapeData.text.length >= 150) {
-                const cleanExcerpt = scrapeData.text.replace(/\s+/g, ' ').substring(0, 1200);
+                const cleanExcerpt = scrapeData.text.replace(/\s+/g, " ").substring(0, 1200);
                 evidenceContext += `--- Source ${allScrapedSources.length + 1}: ${sourceName} (${host}) ---\nTitle: ${resItem.title}\nURL: ${targetUrl}\nRelevant Content: ${cleanExcerpt}\n\n`;
                 addLog(`[Research] Accepted source: ${sourceName}`);
                 successfulDomains.add(host);
@@ -209,12 +182,12 @@ export default function DashboardPage() {
                   url: targetUrl,
                   sourceUrl: targetUrl,
                   link: targetUrl,
-                  snippet: resItem.snippet || '',
+                  snippet: resItem.snippet || "",
                   content: cleanExcerpt,
                   publishedAt: resItem.publishedAt,
                 });
               } else {
-                addLog(`[Research] Rejected source: ${sourceName} (${scrapeData.error || 'Insufficient content'})`);
+                addLog(`[Research] Rejected source: ${sourceName} (${scrapeData.error || "Insufficient content"})`);
               }
             } catch (e: any) {
               addLog(`[Research] Rejected source: ${targetUrl} (Fetch failure: ${e.message})`);
@@ -243,14 +216,23 @@ export default function DashboardPage() {
       if (!synthesizeResponse.ok) throw new Error(synthesizeData.error || "Failed to synthesize verdict.");
 
       addLog("Verification complete. Generating intelligence report.");
-      setStage("complete");
-      setResult({
+      
+      const completeResult: AnalysisResult = {
         ...synthesizeData,
         sourceDomains: Array.from(successfulDomains),
         extractedSources: allScrapedSources,
-      });
+        completedAt: new Date().toLocaleString("en-US", {
+          dateStyle: "medium",
+          timeStyle: "short",
+        }),
+      };
 
-      // Attempt to save history to Prisma backend
+      // 1. Immediately store in global memory state
+      setAnalysisResult(completeResult);
+      setStage("complete");
+
+      // 2. Separately attempt to persist to database in background (does NOT block or reset transient UI)
+      setDbSaveState({ status: "saving" });
       fetch("/api/save-analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -259,7 +241,26 @@ export default function DashboardPage() {
           textContent: mode === "text" ? text : undefined,
           result: synthesizeData,
         }),
-      }).catch(console.error);
+      })
+        .then(async (res) => {
+          if (res.ok) {
+            setDbSaveState({ status: "saved" });
+          } else {
+            const errJson = await res.json().catch(() => ({}));
+            setDbSaveState({
+              status: "error",
+              message: errJson.error || "Could not save to account history.",
+            });
+          }
+        })
+        .catch((saveErr) => {
+          console.warn("[Dashboard] Background database save error:", saveErr);
+          setDbSaveState({
+            status: "error",
+            message: "Database connection failed. Analysis remains available in session.",
+          });
+        });
+
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred during analysis.");
       setStage("idle");
@@ -301,6 +302,18 @@ export default function DashboardPage() {
               <strong>ANALYSIS ERROR:</strong> {error}
             </div>
           )}
+
+          {dbSaveState.status === "error" && (
+            <div className="p-4 rounded-2xl border border-verificator-warning/30 bg-verificator-warning/10 text-verificator-warning text-xs font-mono flex items-start gap-2.5">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-verificator-warning" />
+              <div className="space-y-1">
+                <p className="font-semibold uppercase tracking-wider">Session Memory Active</p>
+                <p className="text-muted-foreground leading-relaxed">
+                  Analysis generated successfully. We couldn't save it to your account history right now, but your report remains fully available during this session.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Results & Terminal Panel */}
@@ -316,6 +329,25 @@ export default function DashboardPage() {
 
           {result && (
             <div className="space-y-6">
+              {/* Header Action Bar with NEW ANALYSIS button */}
+              <div className="flex items-center justify-between pb-1 border-b border-graphite-border">
+                <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground uppercase tracking-wider">
+                  <span className="w-2 h-2 rounded-full bg-neonRed animate-pulse" />
+                  <span>COMPLETED INTELLIGENCE DOSSIER</span>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={resetAnalysis}
+                  className="h-9 px-4 rounded-xl border-graphite-border hover:border-neonRed/50 hover:bg-neonRed/10 text-xs font-mono font-semibold uppercase tracking-wider text-muted-foreground hover:text-neonRed transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+                  title="Clear current report and start a new verification"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-neonRed" />
+                  <span>NEW ANALYSIS</span>
+                </Button>
+              </div>
+
               <VerificationCore status="complete" />
               
               <IntelligenceReport 
@@ -332,7 +364,7 @@ export default function DashboardPage() {
               <ClaimDecomposition 
                 claims={result.claims.map((c, i) => {
                   const validEvidence = (c.evidence || []).filter(
-                    (e) => (e.sourceUrl || e.url) && (e.sourceUrl || e.url)!.startsWith('http') && !(e.sourceUrl || e.url)!.includes('news.google.com')
+                    (e) => (e.sourceUrl || e.url) && (e.sourceUrl || e.url)!.startsWith("http") && !(e.sourceUrl || e.url)!.includes("news.google.com")
                   );
 
                   // Map and enrich evidence items with publisher, domain, and summary
@@ -352,7 +384,7 @@ export default function DashboardPage() {
                     const publisher =
                       ev.publisher ||
                       matchedScraped?.source ||
-                      (domain ? formatPublisherFromDomain(domain) : 'Publisher');
+                      (domain ? formatPublisherFromDomain(domain) : "Publisher");
 
                     const summary =
                       ev.summary && ev.summary.trim().length > 15
@@ -362,13 +394,13 @@ export default function DashboardPage() {
                     return {
                       sourceUrl: sUrl,
                       url: sUrl,
-                      title: ev.title || matchedScraped?.title || 'Source Article',
+                      title: ev.title || matchedScraped?.title || "Source Article",
                       publisher,
                       source: publisher,
                       domain,
-                      snippet: ev.snippet || matchedScraped?.snippet || '',
+                      snippet: ev.snippet || matchedScraped?.snippet || "",
                       summary,
-                      credibility: (ev.credibility || 'HIGH') as 'HIGH' | 'MEDIUM' | 'LOW',
+                      credibility: (ev.credibility || "HIGH") as "HIGH" | "MEDIUM" | "LOW",
                     };
                   });
 
@@ -395,7 +427,12 @@ export default function DashboardPage() {
 
       {result && (
         <div className="w-full mt-12 animate-in slide-in-from-bottom-8 duration-700 fade-in zoom-in-95">
-          <EvidenceGraph sourcesList={result.sourceDomains || []} />
+          <EvidenceGraph 
+            sourcesList={result.sourceDomains || []}
+            extractedSources={result.extractedSources || []}
+            claims={result.claims || []}
+            confidenceScore={result.confidenceScore}
+          />
         </div>
       )}
     </div>

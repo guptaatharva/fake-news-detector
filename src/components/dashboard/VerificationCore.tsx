@@ -7,6 +7,7 @@ import { FileText, Search, Database, FileSearch, ShieldCheck, CheckCircle2, Chev
 interface VerificationCoreProps {
   status: "idle" | "processing" | "complete";
   activeStageIndex?: number;
+  onNewAnalysis?: () => void;
 }
 
 const stages = [
@@ -17,7 +18,7 @@ const stages = [
   { id: "verdict", label: "VERDICT", icon: ShieldCheck },
 ];
 
-export default function VerificationCore({ status, activeStageIndex = 0 }: VerificationCoreProps) {
+export default function VerificationCore({ status, activeStageIndex = 0, onNewAnalysis }: VerificationCoreProps) {
   // If complete, force all active
   const currentIndex = status === "complete" ? stages.length - 1 : activeStageIndex;
 

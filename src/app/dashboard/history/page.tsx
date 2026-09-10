@@ -1,12 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { ShieldCheck, ShieldAlert, AlertTriangle, HelpCircle, Link as LinkIcon, FileText, Calendar } from "lucide-react";
 import Link from "next/link";
-
-const globalForPrisma = global as unknown as { prisma: PrismaClient };
-const prisma = globalForPrisma.prisma || new PrismaClient();
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 export default async function HistoryPage() {
   const supabase = await createClient();
@@ -18,11 +14,19 @@ export default async function HistoryPage() {
     redirect("/login?next=/dashboard/history");
   }
 
-  const analyses = await prisma.analysis.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: "desc" },
-    include: { claims: true },
-  });
+  let analyses: any[] = [];
+  let dbError: string | null = null;
+
+  try {
+    analyses = await prisma.analysis.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      include: { claims: true },
+    });
+  } catch (error: any) {
+    console.error("[History Page] Database error querying analyses:", error?.message || error);
+    dbError = "Could not load saved verification history from the database at this time.";
+  }
 
   const getVerdictTheme = (verdict: string) => {
     switch (verdict) {
@@ -72,12 +76,32 @@ export default async function HistoryPage() {
         </div>
 
         <div className="font-mono text-xs text-muted-foreground bg-graphite-surface px-4 py-2 rounded-2xl border border-graphite-border">
-          TOTAL RECORDS: <strong className="text-neonRed-bright font-bold">{analyses.length}</strong>
+          TOTAL RECORDS: <strong className="text-neonRed-bright font-bold">{dbError ? "--" : analyses.length}</strong>
         </div>
       </div>
 
-      {/* Empty State */}
-      {analyses.length === 0 ? (
+      {/* Error or Empty State */}
+      {dbError ? (
+        <div className="surface-card p-12 text-center space-y-4 border border-verificator-warning/30 bg-verificator-warning/10 rounded-2xl">
+          <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-graphite-elevated border border-verificator-warning/30 mx-auto text-verificator-warning">
+            <AlertTriangle className="h-8 w-8" />
+          </div>
+          <h3 className="font-display text-xl font-bold text-foreground">
+            Archive Temporarily Unavailable
+          </h3>
+          <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+            Unable to connect to the database archive at this moment. Current session analyses remain active.
+          </p>
+          <div className="pt-2">
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-2 font-mono text-xs text-neonRed hover:underline"
+            >
+              <span>RETURN TO WORKSPACE →</span>
+            </Link>
+          </div>
+        </div>
+      ) : analyses.length === 0 ? (
         <div className="surface-card p-12 text-center space-y-4 border border-dashed border-graphite-border bg-graphite-surface">
           <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-graphite-elevated border border-graphite-border mx-auto">
             <ShieldCheck className="h-8 w-8 text-muted-foreground" />
