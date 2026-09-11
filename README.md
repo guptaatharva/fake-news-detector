@@ -1,65 +1,123 @@
-# VeraCius AI
+<div align="center">
 
-VeraCius is a next-generation, AI-powered news verification platform. It doesn't just rely on an LLM's pre-trained memory—it actively functions as an **Autonomous Fact-Checking Agent** by searching the live internet and scraping evidence in real-time to combat fake news and misinformation.
+# 🔴 VeraCius AI
 
-## 🚀 Key Features
+### **VERIFY WHAT MATTERS.**
 
-* **Agentic RAG Architecture**: A sophisticated multi-stage pipeline that actively cross-references up to 5 unique claims against live internet data to prevent AI hallucinations.
-* **Social Media & Web Harvesting**: Automatically queries DuckDuckGo for up to 10 independent sources per claim, explicitly hunting for evidence across general news sites and social media platforms (X/Twitter, Instagram, Threads, TikTok).
-* **Deep Web Scraping**: Uses headless Chromium (Puppeteer) and Mozilla Readability to extract raw article text while bypassing ads and clutter.
-* **Transparent Scoring Engine**: The AI provides a detailed `Score Breakdown` explaining exactly why it arrived at its confidence score based on the credibility and volume of the gathered evidence.
-* **Live Agent Terminal UI**: Watch the AI "think". The dashboard features a real-time, hacker-style terminal that logs every step the agent takes (e.g., extracting claims, searching the web, scraping specific URLs).
-* **Anti-Circular Verification**: Built-in domain filtering ensures the AI cannot use the original source article to prove the original source article is true.
+**AI-powered information verification through live web research, evidence extraction, multi-source corroboration, and reasoning.**
 
-## 🧠 How It Works (The 4-Stage Pipeline)
+<br/>
 
-When you submit a URL or text snippet, VeriLens executes the following atomic steps:
+[![Live Web Research](https://img.shields.io/badge/LIVE-WEB%20RESEARCH-ff1744?style=for-the-badge&logo=googlechrome&logoColor=white)](#)
+[![NVIDIA NIM](https://img.shields.io/badge/AI-NVIDIA%20NIM-76b900?style=for-the-badge&logo=nvidia&logoColor=white)](#)
+[![Supabase](https://img.shields.io/badge/AUTH-SUPABASE-3ecf8e?style=for-the-badge&logo=supabase&logoColor=white)](#)
+[![Next.js](https://img.shields.io/badge/NEXT.JS-15-black?style=for-the-badge&logo=next.js)](#)
+[![TypeScript](https://img.shields.io/badge/TYPESCRIPT-5.x-3178c6?style=for-the-badge&logo=typescript&logoColor=white)](#)
 
-1. **Extraction (`/api/analyze/extract`)**: The LLM reads the submitted content and extracts the top 5 distinct, verifiable factual claims.
-2. **Search (`/api/analyze/search-query`)**: The backend runs parallel searches (General Web + Social Media operators) to gather up to 10 independent sources per claim.
-3. **Scrape (`/api/analyze/scrape`)**: The system spins up Puppeteer to physically visit the discovered URLs and extracts the live text from those articles.
-4. **Synthesis (`/api/analyze/synthesize`)**: The LLM evaluates the original claims based **strictly** on the freshly scraped evidence, assigning a final verdict, a confidence score, and a detailed score breakdown.
+<br/>
 
-## 💻 Tech Stack
+### 🧠 From Claim → Evidence → Verification
 
-* **Frontend**: Next.js 15 (App Router), React, Tailwind CSS, shadcn/ui, Lucide Icons.
-* **Backend**: Node.js API Routes, Vercel AI SDK (`@ai-sdk/google`).
-* **Scraping Engine**: Puppeteer, `@mozilla/readability`, Cheerio, JSDOM.
-* **Database & Auth**: Prisma ORM, Supabase (PostgreSQL), NextAuth.js.
+[Features](#-core-capabilities) •
+[Architecture](#-system-architecture) •
+[Pipeline](#-verification-pipeline) •
+[Tech Stack](#-technology-stack) •
+[Installation](#-getting-started) •
+[API](#-api-architecture) •
+[Security](#-security) •
+[Roadmap](#-roadmap)
 
-## 🛠️ Getting Started
+</div>
 
-### Prerequisites
-* Node.js (v18+)
-* A Google Gemini API Key
-* A Supabase PostgreSQL database URL
+---
 
-### Installation
+## ⚡ What is VeraCius?
 
-1. **Clone the repository and install dependencies:**
-   ```bash
-   npm install
-   ```
+**VeraCius AI** is an AI-powered information verification platform designed to investigate claims using **real-time web evidence instead of relying solely on an LLM's internal knowledge.**
 
-2. **Configure Environment Variables:**
-   Create a `.env.local` file in the root directory and add the following:
-   ```env
-   DATABASE_URL="postgres://your_supabase_url_here"
-   AUTH_SECRET="your_nextauth_secret"
-   GEMINI_API_KEY="your_gemini_api_key_here"
-   ```
+Instead of asking an AI:
 
-3. **Initialize the Database:**
-   ```bash
-   npx prisma generate
-   npx prisma db push
-   ```
+> *"Is this true?"*
 
-4. **Run the Development Server:**
-   ```bash
-   npm run dev
-   ```
-   Open [http://localhost:3000](http://localhost:3000) in your browser to access the dashboard.
+VeraCius asks:
 
-## ⚠️ Notes on Deployment
-Because this application relies on Puppeteer (headless Chromium) for deep web scraping, standard Vercel serverless deployments may exceed their size limits. If deploying to production, it is highly recommended to host the application on a Dockerized environment (like Railway, Render, or a VPS) to ensure the Puppeteer binary runs smoothly.
+> **"What evidence exists, where did it come from, how independently is it corroborated, and what conclusion does that evidence support?"**
+
+The system combines:
+
+- 🌐 Live web search
+- 📰 Real publisher discovery
+- 🔗 Original-source URL resolution
+- 📄 Article extraction
+- 🧩 Claim decomposition
+- 🔍 Evidence analysis
+- 🕸️ Multi-source corroboration
+- 🧠 NVIDIA Nemotron reasoning
+- 📊 Confidence scoring
+- 🗂️ Analysis history
+- 📑 PDF reports
+- 💬 WhatsApp sharing
+
+The goal is simple:
+
+<div align="center">
+
+## **Don't just generate an answer.**
+## **Investigate the evidence.**
+
+</div>
+
+---
+
+# 🎥 See VeraCius in Action
+
+> Replace the placeholder below with an actual screen recording/GIF of your application.
+
+<div align="center">
+
+![VeraCius Demo](./docs/demo.gif)
+
+</div>
+
+### The basic workflow
+
+```text
+┌──────────────┐
+│    CLAIM     │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│  WEB SEARCH  │
+└──────┬───────┘
+       │
+       ▼
+┌─────────────────────┐
+│ REAL PUBLISHERS     │
+│ + ORIGINAL URLS     │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│ ARTICLE EXTRACTION  │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│ CLAIM DECOMPOSITION │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│ EVIDENCE ANALYSIS   │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│ NEMOTRON REASONING  │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│ VERDICT + CONFIDENCE│
+└─────────────────────┘
