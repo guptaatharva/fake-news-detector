@@ -107,8 +107,39 @@
   background: radial-gradient(circle at 50% 30%, hsla(var(--accent), 0.12) 0%, hsla(var(--accent), 0.05) 45%, transparent 70%);
 }
 
+.hero-atmospheric-bloom {
+  background: radial-gradient(ellipse 70% 50% at 50% 25%, hsla(var(--accent), 0.16) 0%, hsla(var(--accent), 0.06) 40%, transparent 75%);
+}
+
 .bg-red-glow-card {
   background: radial-gradient(circle at top left, hsla(var(--accent), 0.08) 0%, transparent 60%);
+}
+
+/* Frosted Glass Utilities (Orchid-Inspired) */
+.glass-surface {
+  background: hsla(var(--card), 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid hsla(var(--border), 0.7);
+}
+
+.dark .glass-surface {
+  background: rgba(10, 10, 14, 0.72);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.glass-surface-elevated {
+  background: hsla(var(--card), 0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid hsla(var(--border), 0.8);
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.25);
+}
+
+.dark .glass-surface-elevated {
+  background: rgba(12, 12, 17, 0.85);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7);
 }
 
 /* Tech Grid Background Pattern */

@@ -17,6 +17,8 @@
 // context — that's a separate, harder problem (reverse image search /
 // manipulation detection) tracked as still-open in REMAINING.md.
 import { recognize } from 'tesseract.js';
+import path from 'path';
+import fs from 'fs';
 
 const OCR_TIMEOUT_MS = 45_000;
 const MAX_OCR_TEXT_LENGTH = 20_000; // matches the extract route's own text-length ceiling
@@ -39,15 +41,36 @@ export class OcrError extends Error {
 export async function extractTextFromImage(buffer: Buffer, mimeType: string): Promise<OcrResult> {
   const dataUrl = `data:${mimeType};base64,${buffer.toString('base64')}`;
 
-  const recognizePromise = recognize(dataUrl, 'eng');
+  const options: Record<string, any> = {
+    // Prevent unhandled worker thread exceptions from crashing Node process on corrupt images
+    errorHandler: (err: any) => {
+      console.warn('[OCR] Worker warning/error:', err?.message || err);
+    },
+  };
+
+  // If local traineddata exists in the repo root, tell Tesseract.js to load from disk
+  // rather than fetching from the jsDelivr CDN.
+  const localModelPath = path.join(process.cwd(), 'eng.traineddata');
+  if (fs.existsSync(localModelPath)) {
+    options.langPath = process.cwd();
+  }
+
+  let timer: NodeJS.Timeout | null = null;
   const timeoutPromise = new Promise<never>((_, reject) => {
-    setTimeout(() => reject(new OcrError('OCR timed out — the image may be too large or complex to process.')), OCR_TIMEOUT_MS);
+    timer = setTimeout(() => reject(new OcrError('OCR timed out — the image may be too large or complex to process.')), OCR_TIMEOUT_MS);
   });
 
-  const { data } = await Promise.race([recognizePromise, timeoutPromise]);
+  const recognizePromise = recognize(dataUrl, 'eng', options);
 
-  const text = (data.text || '').trim().slice(0, MAX_OCR_TEXT_LENGTH);
-  const confidence = typeof data.confidence === 'number' ? data.confidence : 0;
+  try {
+    const { data } = await Promise.race([recognizePromise, timeoutPromise]);
 
-  return { text, confidence };
+    const text = (data?.text || '').trim().slice(0, MAX_OCR_TEXT_LENGTH);
+    const confidence = typeof data?.confidence === 'number' ? data.confidence : 0;
+
+    return { text, confidence };
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
+
