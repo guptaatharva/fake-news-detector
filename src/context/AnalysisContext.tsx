@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState } from "react";
+import type { ConfidenceBreakdown } from "@/lib/confidence";
 
 export interface Evidence {
   sourceUrl?: string;
@@ -12,13 +13,31 @@ export interface Evidence {
   domain?: string;
   summary?: string;
   credibility: "HIGH" | "MEDIUM" | "LOW";
+  credibilityScore?: number;
+  publishedAt?: string;
+  stance?: "SUPPORTS" | "CONTRADICTS" | "NEUTRAL" | "IRRELEVANT";
+  isSatire?: boolean;
 }
+
+export type ClaimVerdict = "TRUE" | "MOSTLY_TRUE" | "MIXTURE" | "MOSTLY_FALSE" | "FALSE" | "UNVERIFIABLE" | "SATIRE";
 
 export interface Claim {
   claimText: string;
-  verdict: "TRUE" | "MOSTLY_TRUE" | "MIXTURE" | "MOSTLY_FALSE" | "FALSE" | "UNVERIFIABLE";
+  verdict: ClaimVerdict;
   explanation: string;
   evidence?: Evidence[];
+  confidence?: number;
+  confidenceBreakdown?: ConfidenceBreakdown;
+  temporalStatus?: string;
+  temporalAnalysis?: string;
+  agentAgreementScore?: number;
+  contextualFactors?: string[];
+  injectionAttemptDetected?: boolean;
+  lowSourceDiversity?: boolean;
+  isSatire?: boolean;
+  /** Set when this claim's debate call failed outright (§8.3 partial-failure state). */
+  failed?: boolean;
+  failureReason?: string;
 }
 
 export interface ScrapedSource {
@@ -31,25 +50,31 @@ export interface ScrapedSource {
   snippet: string;
   content: string;
   publishedAt?: string;
+  byline?: string;
+  injectionSuspected?: boolean;
 }
 
 export interface AnalysisResult {
-  verdict: "TRUE" | "MOSTLY_TRUE" | "MIXTURE" | "MOSTLY_FALSE" | "FALSE" | "UNVERIFIABLE";
+  verdict: ClaimVerdict;
   confidenceScore: number;
+  confidenceBreakdown?: ConfidenceBreakdown;
   scoreBreakdown: string;
   summary: string;
   claims: Claim[];
   sourceDomains?: string[];
   extractedSources?: ScrapedSource[];
   completedAt?: string;
+  lowSourceDiversity?: boolean;
+  savedAnalysisId?: string;
 }
 
-export type AnalysisStage = "idle" | "extracting" | "searching" | "synthesizing" | "complete";
+export type AnalysisStage = "idle" | "extracting" | "searching" | "debating" | "synthesizing" | "complete";
 export type AnalysisMode = "url" | "text" | "claim";
 
 export interface DbSaveState {
   status: "idle" | "saving" | "saved" | "error";
   message?: string;
+  analysisId?: string;
 }
 
 interface AnalysisContextType {

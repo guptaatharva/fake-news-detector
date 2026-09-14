@@ -94,6 +94,15 @@ export default function Footer() {
             <Link href="/about" className="hover:text-accent transition-colors">
               ABOUT SYSTEM
             </Link>
+            <Link href="/methodology" className="hover:text-accent transition-colors">
+              METHODOLOGY
+            </Link>
+            <Link href="/privacy" className="hover:text-accent transition-colors">
+              PRIVACY
+            </Link>
+            <Link href="/terms" className="hover:text-accent transition-colors">
+              TERMS
+            </Link>
             <Link href="/dashboard" className="hover:text-accent transition-colors">
               VERIFY NOW
             </Link>

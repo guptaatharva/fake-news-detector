@@ -1,15 +1,29 @@
+import { z } from 'zod';
 import { NextRequest, NextResponse } from 'next/server';
 import { SearchService } from '@/lib/services/search.service';
+import { guardApiRequest } from '@/lib/security/apiGuard';
 
 export const maxDuration = 30;
 
-export async function POST(req: NextRequest) {
-  try {
-    const { claim, originalUrl } = await req.json();
+const RequestSchema = z.object({
+  claim: z.string().min(1).max(2000),
+  originalUrl: z.string().max(2048).optional(),
+});
 
-    if (!claim || typeof claim !== 'string' || claim.trim().length === 0) {
+export async function POST(req: NextRequest) {
+  // limit raised from 40: a single 15-claim analysis alone can make up to 15
+  // search-query calls (one per claim), so 40 left little headroom for a
+  // user re-checking or running back-to-back analyses within the window.
+  const guard = await guardApiRequest(req, { scope: 'analyze:search-query', limit: 60, windowMs: 60_000, requireAuth: true });
+  if (!guard.ok) return guard.response;
+
+  try {
+    const body = await req.json();
+    const parsed = RequestSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json({ error: "No valid claim provided for searching." }, { status: 400 });
     }
+    const { claim, originalUrl } = parsed.data;
 
     // Perform live web search for the factual claim
     const rawResults = await SearchService.searchWeb(claim.trim(), 8).catch(err => {
@@ -101,4 +115,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message || 'An error occurred during search query.' }, { status: 500 });
   }
 }
-

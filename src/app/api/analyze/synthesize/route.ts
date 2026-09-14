@@ -1,22 +1,43 @@
 import { z } from 'zod';
 import { nvidiaGenerateObject, NvidiaError } from '@/lib/nvidia';
 import { NextRequest, NextResponse } from 'next/server';
+import { guardApiRequest } from '@/lib/security/apiGuard';
+import { UNTRUSTED_CONTENT_GUARD, wrapUntrustedContent, detectPromptInjection } from '@/lib/promptSafety';
 
 export const maxDuration = 300;
 
+// NOTE: The dashboard's main pipeline now uses /api/analyze/debate (the
+// multi-agent debate system) per-claim, with deterministic confidence scoring.
+// This single-shot synthesis route is kept as a lighter-weight legacy path
+// (used by the browser extension's quick-check) that still asks one model
+// call to reason over all claims + evidence at once.
+
+const RequestSchema = z.object({
+  originalText: z.string().min(1).max(50_000),
+  evidenceContext: z.string().max(100_000),
+});
+
 export async function POST(req: NextRequest) {
+  const guard = await guardApiRequest(req, { scope: 'analyze:synthesize', limit: 12, windowMs: 60_000, requireAuth: true });
+  if (!guard.ok) return guard.response;
+
   const requestStartTime = Date.now();
   try {
-    const { originalText, evidenceContext } = await req.json();
-
-    if (!originalText || !evidenceContext) {
+    const body = await req.json();
+    const parsed = RequestSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json({ error: "Missing text or evidence context." }, { status: 400 });
+    }
+    const { originalText, evidenceContext } = parsed.data;
+
+    if (detectPromptInjection(evidenceContext)) {
+      console.warn('[NeMo] [Synthesize] Possible prompt-injection pattern detected in evidence context.');
     }
 
     // Count sources in evidence context
-    const sourceMatches = (evidenceContext as string).match(/--- Source \d+:|Source \[|Publisher:/gi);
+    const sourceMatches = evidenceContext.match(/--- Source \d+:|Source \[|Publisher:/gi);
     const sourceCount = sourceMatches ? sourceMatches.length : (evidenceContext.length > 0 ? 1 : 0);
-    const totalChars = (originalText as string).length + (evidenceContext as string).length;
+    const totalChars = originalText.length + evidenceContext.length;
 
     console.log(`[NeMo] [Synthesize] Sources: ${sourceCount}`);
     console.log(`[NeMo] [Synthesize] Input characters: ${totalChars}`);
@@ -79,11 +100,12 @@ RULES:
 - Base your analysis ONLY on the provided evidence below.
 - Ensure all string values are properly escaped with no raw unescaped newlines.
 
+${UNTRUSTED_CONTENT_GUARD}
+
 Text / Claims to analyze:
 ${originalText}
 
-Scraped Web Evidence:
-${evidenceContext}`,
+${wrapUntrustedContent('scraped-web-evidence', evidenceContext)}`,
       maxTokens: 16384,
       callerLabel: 'Synthesize',
     });
@@ -117,4 +139,3 @@ ${evidenceContext}`,
     return NextResponse.json({ error: message }, { status });
   }
 }
-

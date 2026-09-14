@@ -1,0 +1,240 @@
+[
+  {
+    "id": "ariely-outdated",
+    "claim": "A widely-cited 2002 psychology study concluding that externally-imposed deadlines improve performance more than self-set deadlines is a reliable, well-established finding.",
+    "category": "very recent retraction (temporal trap)",
+    "expected": "FALSE",
+    "notes": "The Ariely/Wertenbroch procrastination study (2,100+ citations, taught for two decades) was retracted by Psychological Science on ~Sept 3, 2026 after a failed replication and a Data Colada data-manipulation investigation. Asserted as \"reliable\" in the present tense, this is now false — and very freshly so (the retraction is only days old at claim-writing time), a genuine test of whether live search surfaces up-to-the-minute corrections.",
+    "sourceDomains": [
+      "ynetnews.com",
+      "statmodeling.stat.columbia.edu"
+    ],
+    "debate": {
+      "actualVerdict": "FALSE",
+      "actualBucket": "FALSE",
+      "confidence": 82,
+      "agentAgreementScore": 0.95,
+      "isSatire": false,
+      "temporalStatus": "PREVIOUSLY_TRUE_NOW_FALSE",
+      "explanation": "The claim asserts that the 2002 Ariely and Wertenbroch study's conclusion — that externally-imposed deadlines improve performance more than self-set deadlines — is a 'reliable, well-established finding.' However, the Opposition, Context, and Temporal agents all converge on the fact that this study was formally retracted by Psychological Science on September 2, 2026 (just nine days before the current date of September 11, 2026). The retraction followed a failed replication by Hyndman and Bisin and a Data Colada analysis that uncovered duplicated observations and other data anomalies; both authors agreed to the retraction. The study had previously been widely cited (over 2,100 citations), but its central finding is no longer considered valid. The Support agent provides no supporting arguments (confidence 0), while the Opposition agent assigns 95% confidence. The Temporal agent classifies the status as PREVIOUSLY_TRUE_NOW_FALSE. Therefore, presenting this retracted, discredited study as a currently reliable finding is false.",
+      "correct": true
+    },
+    "baseline": {
+      "actualVerdict": "FALSE",
+      "actualBucket": "FALSE",
+      "confidence": 95,
+      "explanation": "The 2002 study by Ariely and Wertenbroch on deadlines and performance has been retracted by Psychological Science after a failed replication and analysis revealed data anomalies, undermining its reliability and well-established status.",
+      "correct": true
+    },
+    "elapsedSec": 81
+  },
+  {
+    "id": "ariely-correct",
+    "claim": "A widely-cited 2002 psychology study on deadlines and procrastination by Dan Ariely was retracted in September 2026 after a failed replication and evidence of data manipulation.",
+    "category": "very recent retraction (correctly stated)",
+    "expected": "TRUE",
+    "notes": "Same underlying event as ariely-outdated, correctly worded this time — pairs the two to test both directions.",
+    "sourceDomains": [
+      "retractionwatch.com",
+      "ynetnews.com",
+      "dukechronicle.com"
+    ],
+    "debate": {
+      "actualVerdict": "TRUE",
+      "actualBucket": "TRUE",
+      "confidence": 82,
+      "agentAgreementScore": 0.95,
+      "isSatire": false,
+      "temporalStatus": "CURRENTLY_VALID",
+      "explanation": "All four agents converge on the same conclusion: the 2002 Ariely/Wertenbroch procrastination study was retracted by Psychological Science on September 2, 2026, following a failed replication (Hyndman & Bisin, July 2026) and Data Colada analyses (August 31 & September 2, 2026) that identified severe data anomalies indicative of tampering. The retraction was requested by co-author Klaus Wertenbroch and agreed to by both authors. The study was indeed widely cited (≈1,000–2,100 citations). The temporal assessment confirms the retraction occurred in early September 2026, which is consistent with the claim’s ‘September 2026’ phrasing and with today’s date (September 11, 2026). No credible contradictory evidence exists. The claim is fully substantiated.",
+      "correct": true
+    },
+    "baseline": {
+      "actualVerdict": "TRUE",
+      "actualBucket": "TRUE",
+      "confidence": 95,
+      "explanation": "All three sources confirm that a 2002 study on procrastination co-authored by Dan Ariely was retracted by Psychological Science in early September 2026 (Sept 2-3) following a failed replication attempt and Data Colada analyses indicating data manipulation. The study was widely cited (1,000-2,100 citations) and the retraction was requested by co-author Klaus Wertenbroch after evidence of data tampering emerged.",
+      "correct": true
+    },
+    "elapsedSec": 92
+  },
+  {
+    "id": "replication-crisis",
+    "claim": "A large-scale, multi-year project found that roughly half of social science studies failed to replicate.",
+    "category": "real, well-documented science finding",
+    "expected": "TRUE",
+    "notes": "Reported by Nature; a large systematic replication effort found roughly half of tested social-science studies did not replicate.",
+    "sourceDomains": [
+      "britannica.com",
+      "thebulletin.org",
+      "nature.com"
+    ],
+    "debate": {
+      "actualVerdict": "MOSTLY_TRUE",
+      "actualBucket": "TRUE",
+      "confidence": 62,
+      "agentAgreementScore": 0.95,
+      "isSatire": false,
+      "temporalStatus": "CURRENTLY_VALID",
+      "explanation": "The Support Agent provides strong evidence (confidence 95%) that a massive seven-year project examining 3,900 social-science papers found only about half of the studies tested could be replicated, published in Nature (April 1, 2026). The Opposition Agent offers no contradictory arguments. The Context Agent clarifies that the replication success rate of ~50% applies to the studies actually tested, not necessarily all 3,900 papers, and confirms the project's focus on social sciences. The Temporal Agent confirms the finding is currently valid, with the Nature publication date preceding today (September 11, 2026). The claim is substantively accurate: a large-scale, multi-year project did find roughly half of social science studies failed to replicate. The minor imprecision of not explicitly stating 'tested' does not undermine the core claim, warranting MOSTLY_TRUE rather than TRUE.",
+      "correct": true
+    },
+    "baseline": {
+      "actualVerdict": "TRUE",
+      "actualBucket": "TRUE",
+      "confidence": 95,
+      "explanation": "Nature article reports a seven-year project examining 3,900 social-science papers found only half could be replicated, directly supporting the claim.",
+      "correct": true
+    },
+    "elapsedSec": 110.5
+  },
+  {
+    "id": "venezuela-earthquake",
+    "claim": "A double earthquake measuring magnitude 7.2 and 7.5 struck near the town of Morón, Venezuela on June 24, 2026, with preliminary total economic losses estimated around $30 billion.",
+    "category": "real, specific 2026 disaster statistic",
+    "expected": "TRUE",
+    "notes": "Per Swiss Re's first-half 2026 catastrophe report: a double earthquake ~200km west of Caracas near Morón, M7.2/7.5, preliminary total losses ~$30bn (insured losses under $1bn).",
+    "sourceDomains": [
+      "sfchronicle.com",
+      "pbs.org",
+      "cbsnews.com"
+    ],
+    "debate": {
+      "actualVerdict": "MIXTURE",
+      "actualBucket": "MIXTURE",
+      "confidence": 59,
+      "agentAgreementScore": 0.65,
+      "isSatire": false,
+      "temporalStatus": "CURRENTLY_VALID",
+      "explanation": "The claim contains two separable assertions: (1) a double earthquake of magnitudes 7.2 and 7.5 struck Venezuela on June 24, 2026, and (2) the epicenter was near the town of Morón with preliminary economic losses around $30 billion. The PBS and CBS News sources confirm the first assertion — they report a doublet event of magnitudes 7.2 and 7.5 occurring 39 seconds apart on June 24, 2026, causing massive damage and hundreds of casualties. However, both sources locate the earthquakes on Venezuela's northern coast, near Caracas and La Guaira, not specifically near Morón (which lies inland in Carabobo state). The $30 billion economic loss figure is not mentioned in any provided source. The temporal analysis confirms the event date is consistent with recent reporting. Because the evidence supports the core seismic event but does not corroborate the precise location or the economic loss estimate, the claim is a mixture of supported and unsupported elements.",
+      "correct": false
+    },
+    "baseline": {
+      "actualVerdict": "MIXTURE",
+      "actualBucket": "MIXTURE",
+      "confidence": 85,
+      "explanation": "The evidence confirms a doublet earthquake of magnitudes 7.2 and 7.5 struck Venezuela's northern coast on June 24, 2026, causing significant casualties and damage in Caracas and La Guaira. However, the evidence does not mention the town of Morón as the epicenter or nearby area, nor does it provide any preliminary economic loss estimate of $30 billion.",
+      "correct": false
+    },
+    "elapsedSec": 73.8
+  },
+  {
+    "id": "oregon-wildfires",
+    "claim": "Wildfires in Oregon in 2026 had burned more than two million acres by early August, setting a new record.",
+    "category": "real, specific 2026 disaster statistic",
+    "expected": "TRUE",
+    "notes": "Per Center for Disaster Philanthropy's Aug 3, 2026 weekly disaster update: Oregon wildfires broke records with over two million acres burned as of that date.",
+    "sourceDomains": [
+      "opb.org",
+      "statesmanjournal.com",
+      "katu.com"
+    ],
+    "debate": {
+      "actualVerdict": "MIXTURE",
+      "actualBucket": "MIXTURE",
+      "confidence": 61,
+      "agentAgreementScore": 0.75,
+      "isSatire": false,
+      "temporalStatus": "CURRENTLY_VALID",
+      "explanation": "The claim makes two distinct assertions: (1) that over two million acres had burned in Oregon by early August 2026, and (2) that this amounted to a new record. The evidence supports the first part: the Statesman Journal (August 2) reports 2.014 million acres burned as of August 3, which is indeed more than two million acres. However, that same source notes the total was still short of the 2024 record of 2.081 million acres. The record was not officially broken until around August 10, when KATU reported 2.336 million acres — a date the Context and Opposition agents note is over a week after 'early August.' The Temporal Agent's 'CURRENTLY_VALID' rating does not fully account for this timing discrepancy. Because the claim combines a true acreage figure with an inaccurate temporal claim about the record, the verdict is MIXTURE.",
+      "correct": false
+    },
+    "baseline": {
+      "actualVerdict": "MIXTURE",
+      "actualBucket": "MIXTURE",
+      "confidence": 90,
+      "explanation": "By August 3, 2026, Oregon had burned 2.014 million acres (over two million), but this was still short of the 2024 record of 2.081 million acres. The all-time record was not broken until around August 10, when acreage reached approximately 2.336 million acres. Thus, the claim correctly states over two million acres burned by early August, but incorrectly states a new record had been set by that time.",
+      "correct": false
+    },
+    "elapsedSec": 158.8
+  },
+  {
+    "id": "disaster-losses-stat",
+    "claim": "Global natural disasters caused roughly $112 billion in economic losses in the first half of 2026, with about 60% of those losses uninsured.",
+    "category": "real, compound 2026 statistic",
+    "expected": "TRUE",
+    "notes": "Per Munich Re's first-half 2026 natural disaster review: ~$112bn total losses, ~$44bn insured — a roughly 60% insurance gap.",
+    "sourceDomains": [
+      "chinadaily.com.cn",
+      "riskandinsurance.com",
+      "insurancebusinessmag.com"
+    ],
+    "debate": {
+      "actualVerdict": "TRUE",
+      "actualBucket": "TRUE",
+      "confidence": 79,
+      "agentAgreementScore": 0.95,
+      "isSatire": false,
+      "temporalStatus": "CURRENTLY_VALID",
+      "explanation": "The claim is fully supported by Munich Re's mid-year 2026 report as cited by multiple reputable sources (Insurance Business, China Daily, Risk & Insurance). The Support Agent confirms the $112 billion total economic loss figure and the 60% protection gap (i.e., ~60% uninsured) with 95% confidence. The Opposition Agent finds no contradicting arguments. The Context Agent adds that the 60% protection gap matches the 10-year average and is driven largely by low insurance penetration for earthquakes (e.g., the Venezuela quakes), but this context does not contradict the claim — it reinforces its accuracy. The Temporal Agent confirms the claim is CURRENTLY_VALID: all sources are from July–August 2026 reporting on H1 2026 data, which is historical relative to the current date of 2026-09-11. The claim's use of \"roughly\" and \"about\" appropriately reflects the reported \"nearly US$112 billion\" and \"60% protection gap.\" No injection attempts are detected in the provided source snippets.",
+      "correct": true
+    },
+    "baseline": {
+      "actualVerdict": "TRUE",
+      "actualBucket": "TRUE",
+      "confidence": 95,
+      "explanation": "Source 3 (Insurance Business) explicitly states that natural disasters worldwide caused total losses of nearly US$112 billion in the first half of 2026, with US$44 billion covered by insurance, representing a 60% protection gap (i.e., 60% uninsured). Source 1 (China Daily) corroborates the ~$112 billion figure from Munich Re's half-yearly update. The claim matches these data points.",
+      "correct": true
+    },
+    "elapsedSec": 37.6
+  },
+  {
+    "id": "disaster-losses-spin",
+    "claim": "Global disaster losses in the first half of 2026 were about 60% uninsured, which proves the insurance industry is abandoning natural disaster coverage.",
+    "category": "true statistic + unsupported causal spin",
+    "expected": "MIXTURE",
+    "notes": "The 60% figure is real (see disaster-losses-stat), but \"proves the insurance industry is abandoning natural disaster coverage\" is an unsupported editorial leap the source data doesn't establish — the exact statistical-misrepresentation pattern, built on a real, current statistic instead of a hypothetical one.",
+    "sourceDomains": [
+      "swissre.com",
+      "munichre.com",
+      "ft.com"
+    ],
+    "debate": {
+      "actualVerdict": "MIXTURE",
+      "actualBucket": "MIXTURE",
+      "confidence": 67,
+      "agentAgreementScore": 0.85,
+      "isSatire": false,
+      "temporalStatus": "CURRENTLY_VALID",
+      "explanation": "The claim consists of two separable assertions: (1) that global disaster losses in H1 2026 were about 60% uninsured, and (2) that this proves the insurance industry is abandoning natural disaster coverage. The evidence from Munich Re and Swiss Re confirms the first part: Munich Re reports a 60% insurance gap (US$44bn insured of US$112bn total losses), and Swiss Re estimates a 58% uninsured share (42% insured), consistent with the claim's 'about 60%' figure. However, both sources directly contradict the second part. Swiss Re states that insurance covered 42% of economic losses, which is 'well above the long-term average,' and notes a long-term upward trend in insured losses driven by growing exposure and climate change, indicating continued underwriting of natural disaster risk. Munich Re adds that losses were 'slightly below the ten-year average' and the gap reflects low insurance penetration in specific regions (e.g., the Venezuela earthquake), not insurer withdrawal. The Context and Temporal agents reinforce that the data is current and the inference of abandonment is unsupported. Therefore, the claim is a mixture of a factually accurate statistic and an unsupported causal conclusion.",
+      "correct": true
+    },
+    "baseline": {
+      "actualVerdict": "MOSTLY_FALSE",
+      "actualBucket": "FALSE",
+      "confidence": 90,
+      "explanation": "Munich Re reports that 60% of global disaster losses in H1 2026 were uninsured (US$44bn insured out of US$112bn total), confirming the statistic. However, Swiss Re states insurance covered 42% of economic losses, which is well above the long-term average, indicating the industry is not abandoning coverage but actually providing above-average protection. The claim's conclusion that this proves abandonment is unsupported and contradicted by the evidence.",
+      "correct": false
+    },
+    "elapsedSec": 101.5
+  },
+  {
+    "id": "bayfirst-restatement",
+    "claim": "BayFirst Financial Corp restated its 2025 net loss from $22.9 million to $24.2 million after identifying accounting errors related to deferred origination costs and accrued interest on defaulted loans.",
+    "category": "narrow, thinly-covered real claim",
+    "expected": "TRUE",
+    "notes": "Per BayFirst Financial Corp's 2026 SEC Form 8-K: identified $2.8M of deferred origination costs and $2.1M of accrued interest misstatements; restated 2025 net loss from $22.9M to $24.2M. Likely to have thin, SEC-filing-dominated web coverage — a realistic low-evidence stress test rather than a claim with abundant corroborating news coverage.",
+    "sourceDomains": [
+      "globenewswire.com",
+      "scanx.trade"
+    ],
+    "debate": {
+      "actualVerdict": "MIXTURE",
+      "actualBucket": "MIXTURE",
+      "confidence": 60,
+      "agentAgreementScore": 0.75,
+      "isSatire": false,
+      "temporalStatus": "CURRENTLY_VALID",
+      "explanation": "The claim makes two specific assertions: (1) BayFirst restated its 2025 net loss from $22.9 million to $24.2 million, and (2) the restatement was due to accounting errors related to deferred origination costs and accrued interest on defaulted loans. The provided sources confirm that BayFirst announced a restatement of audited financial statements for FY2024, FY2025, and Q1 2026, driven by an asset resolution plan affecting loan portfolios, impairments, and write‑downs. However, neither source mentions the precise net‑loss figures ($22.9M to $24.2M) nor identifies deferred origination costs and accrued interest on defaulted loans as the cause. The opposition and context agents highlight that the stated cause is inconsistent with the asset‑resolution explanation in the evidence. Since a core fact (a 2025 restatement occurred) is supported while the specific quantitative change and the cited accounting errors are not, the claim is a mixture of a verified event and unsupported details.",
+      "correct": false
+    },
+    "baseline": {
+      "actualVerdict": "UNVERIFIABLE",
+      "actualBucket": "UNVERIFIABLE",
+      "confidence": 20,
+      "explanation": "The provided evidence confirms BayFirst Financial Corp will restate financial statements for 2024 and 2025 due to an asset resolution plan, but does not include the specific net loss figures ($22.9M to $24.2M) or mention accounting errors related to deferred origination costs and accrued interest on defaulted loans.",
+      "correct": false
+    },
+    "elapsedSec": 118.3
+  }
+]

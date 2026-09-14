@@ -8,45 +8,22 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// NOTE: The NextAuth-shaped Account/Session models that used to live here were
+// removed (§6.2) — this app authenticates via Supabase Auth, not NextAuth, and
+// nothing in the codebase ever queried them. Supabase manages its own
+// auth.users/sessions tables outside of Prisma's schema entirely.
+
 model User {
   id            String    @id @default(cuid())
   name          String?
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-  accounts      Account[]
-  sessions      Session[]
   analyses      Analysis[]
   bookmarks     Bookmark[]
+  feedback      Feedback[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-}
-
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Analysis {
@@ -57,32 +34,104 @@ model Analysis {
   verdict        String
   confidence     Float
   scoreBreakdown String?
+
+  /// Canonicalized form of sourceUrl (src/lib/normalizeUrl.ts) — lowercased host,
+  /// stripped "www."/tracking params/trailing slash — so two different raw URLs
+  /// pointing at the same article ("https://x.com/a/?utm_source=t" vs
+  /// "http://www.x.com/a") can be matched for cross-user result caching (#9 in
+  /// REMAINING.md). Null for text-mode analyses, which are never cache-matched.
+  normalizedSourceUrl String?
+  /// Deterministic confidence breakdown from src/lib/confidence.ts
+  /// ({ sourceQuality, evidenceStrength, agentAgreement, freshness, totalConfidence }).
+  confidenceFactors Json?
   summary        String
+  /// Count of independent domains whose evidence contributed to the verdict.
+  sourceCount    Int?     @default(0)
+  /// True when fewer than 2 independent domains corroborated the verdict (§3.9).
+  lowSourceDiversity Boolean @default(false)
   claims         Claim[]
+
+  /// Shareable public read-only report link (§8.4).
+  isPublic       Boolean  @default(false)
+  publicSlug     String?  @unique
+
+  /// Analysis versioning / re-check (§6.4): a re-run links back to the analysis it re-checked.
+  previousVersionId String?
+  previousVersion   Analysis?  @relation("AnalysisVersions", fields: [previousVersionId], references: [id])
+  nextVersions      Analysis[] @relation("AnalysisVersions")
+
+  bookmarks      Bookmark[]
+  feedback       Feedback[]
   createdAt      DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([normalizedSourceUrl, createdAt])
+  @@index([sourceUrl])
 }
 
 model Claim {
-  id         String   @id @default(cuid())
-  analysisId String
-  claimText  String
-  verdict    String
-  evidence   Evidence[]
+  id                  String   @id @default(cuid())
+  analysisId          String
+  claimText           String
+  verdict             String
+  explanation         String?
+  /// 0.0-1.0 debate-agent consensus score from the Judge agent.
+  agentAgreementScore Float?
+  temporalStatus      String?
+  temporalAnalysis    String?
+  evidence            Evidence[]
+
+  sourceRelations ClaimRelationship[] @relation("SourceClaim")
+  targetRelations ClaimRelationship[] @relation("TargetClaim")
 
   analysis Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
 }
 
-model Evidence {
-  id          String @id @default(cuid())
-  claimId     String
-  sourceUrl   String
-  title       String
-  snippet     String
-  credibility String
+model Source {
+  id               String   @id @default(cuid())
+  domain           String   @unique
+  credibilityScore Int?
+  category         String?
+  isSatire         Boolean  @default(false)
+  evidence         Evidence[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
 
-  claim Claim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+model Evidence {
+  id               String    @id @default(cuid())
+  claimId          String
+  sourceId         String?
+  sourceUrl        String
+  title            String
+  snippet          String
+  /// Full scraped excerpt (§6.3), not just the LLM-summarized snippet — lets a
+  /// past analysis be re-audited or re-scored without re-scraping.
+  fullText         String?   @db.Text
+  publishedAt      DateTime?
+  /// SUPPORTS / CONTRADICTS / NEUTRAL / IRRELEVANT, from the Judge agent's
+  /// per-source stance classification.
+  stance           String?
+  credibility      String
+  credibilityScore Int?
+
+  claim  Claim   @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  source Source? @relation(fields: [sourceId], references: [id])
+}
+
+model ClaimRelationship {
+  id               String @id @default(cuid())
+  sourceClaimId    String
+  targetClaimId    String
+  /// SUPPORTS / CONTRADICTS / RELATED
+  relationshipType String
+
+  sourceClaim Claim @relation("SourceClaim", fields: [sourceClaimId], references: [id], onDelete: Cascade)
+  targetClaim Claim @relation("TargetClaim", fields: [targetClaimId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceClaimId, targetClaimId])
 }
 
 model Bookmark {
@@ -91,5 +140,39 @@ model Bookmark {
   analysisId String
   createdAt  DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analysis Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, analysisId])
+}
+
+/// User-flagged verdict corrections (§9.2) — both a trust signal and a source
+/// of data for future confidence calibration.
+model Feedback {
+  id         String   @id @default(cuid())
+  userId     String
+  analysisId String
+  type       String   @default("verdict_wrong")
+  message    String?
+  status     String   @default("open")
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analysis Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+}
+
+/// Persisted record of abuse-monitor warnings (§9.4) — src/lib/security/abuseMonitor.ts
+/// logs a console warning AND writes one of these when an identity resubmits the
+/// same content repeatedly in a short window, so there's a queryable history
+/// instead of only ephemeral logs. Reviewed via /admin/abuse (allowlisted by email).
+model AbuseEvent {
+  id          String   @id @default(cuid())
+  identity    String
+  scope       String
+  reason      String
+  occurrences Int
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([identity])
 }

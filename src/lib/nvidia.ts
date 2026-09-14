@@ -512,6 +512,14 @@ export interface NvidiaGenerateObjectOptions<T extends z.ZodType> {
    * Defaults to 16384 for Nemotron 3 Ultra.
    */
   maxTokens?: number;
+  /**
+   * Whether to run the model in chain-of-thought "thinking" mode. Defaults to
+   * true. Thinking materially improves quality for genuinely hard synthesis
+   * (extraction, final verdicts) but is pure latency overhead for small,
+   * mechanical classification tasks (e.g. "list supporting points as JSON") —
+   * disable it for those callers to cut per-call latency significantly.
+   */
+  enableThinking?: boolean;
 }
 
 export interface NvidiaGenerateObjectResult<T> {
@@ -527,7 +535,9 @@ export interface NvidiaGenerateObjectResult<T> {
  * Generate a structured object using NVIDIA Nemotron 3 Ultra.
  *
  * Strategy:
- *  1. Stream a completion with enable_thinking=true via NVIDIA OpenAI-compatible API.
+ *  1. Stream a completion via NVIDIA's OpenAI-compatible API, with chain-of-thought
+ *     "thinking" mode on by default (disable per-call via `enableThinking: false`
+ *     for cheap, mechanical tasks where reasoning is pure latency overhead).
  *  2. Isolate `reasoning_content` strictly into reasoning trace; accumulate `content` for the final answer.
  *  3. NEVER pass reasoning trace to JSON parser.
  *  4. Log comprehensive diagnostic metadata (content length, reasoning length, finish_reason, previews).
@@ -538,7 +548,7 @@ export interface NvidiaGenerateObjectResult<T> {
 export async function nvidiaGenerateObject<T extends z.ZodType>(
   options: NvidiaGenerateObjectOptions<T>,
 ): Promise<NvidiaGenerateObjectResult<z.infer<T>>> {
-  const { schema, prompt, callerLabel, abortSignal, maxTokens = 16384 } = options;
+  const { schema, prompt, callerLabel, abortSignal, maxTokens = 16384, enableThinking = true } = options;
 
   const label = `[NeMo] [${callerLabel}]`;
   const startTime = Date.now();
@@ -566,7 +576,7 @@ export async function nvidiaGenerateObject<T extends z.ZodType>(
         top_p: 0.95,
         max_tokens: maxTokens,
         // @ts-ignore — chat_template_kwargs is passed through by openai v7
-        chat_template_kwargs: { enable_thinking: true },
+        chat_template_kwargs: { enable_thinking: enableThinking },
         stream: true,
       } as any,
       abortSignal ? { signal: abortSignal } : undefined,

@@ -61,6 +61,9 @@ export default function CommandPalette() {
 
             {/* Palette Dialog */}
             <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Command palette"
               initial={{ opacity: 0, scale: 0.95, y: -20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -72,6 +75,7 @@ export default function CommandPalette() {
                 <Command className="h-5 w-5 text-neonRed" />
                 <input
                   autoFocus
+                  aria-label="Search commands"
                   placeholder="Type a command or search..."
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}

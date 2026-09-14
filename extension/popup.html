@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>VeriLens AI</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      width: 320px;
+      padding: 16px;
+      background-color: #0a0a0a;
+      color: white;
+      margin: 0;
+    }
+    h2 {
+      margin-top: 0;
+      color: #14b8a6;
+      font-size: 1.5rem;
+    }
+    .url-display {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      margin-bottom: 16px;
+      word-break: break-all;
+    }
+    button {
+      background-color: #0d9488;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      width: 100%;
+      transition: background-color 0.2s;
+    }
+    button:hover {
+      background-color: #0f766e;
+    }
+    #results {
+      margin-top: 16px;
+      display: none;
+    }
+    .score-box {
+      background-color: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .score-value {
+      font-size: 2rem;
+      font-weight: 900;
+      color: white;
+    }
+    .verdict-text {
+      font-size: 1rem;
+      font-weight: bold;
+      margin-top: 4px;
+      color: #34d399;
+    }
+    .loader {
+      display: none;
+      text-align: center;
+      margin-top: 16px;
+      color: #94a3b8;
+    }
+    .error {
+      color: #f87171;
+      margin-top: 12px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .disclaimer {
+      font-size: 0.7rem;
+      color: #f59e0b;
+      background-color: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <h2>VeriLens AI</h2>
+  <div class="url-display" id="currentUrl">Loading URL...</div>
+
+  <div class="disclaimer">
+    ⚠ Quick check only — no live evidence is gathered here, so this result is a shallow, evidence-free AI read of
+    the page text. For a real, sourced verdict use "View Full Report" to run the full multi-agent debate pipeline.
+    Requires being signed in at the VeraCius AI site.
+  </div>
+
+  <button id="analyzeBtn">Quick Check This Page</button>
+
+  <div class="loader" id="loader">Analyzing content... This may take up to 60 seconds.</div>
+
+  <div class="error" id="error"></div>
+
+  <div id="results">
+    <div class="score-box">
+      <div style="font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">Shallow Check (no evidence)</div>
+      <div class="score-value" id="scoreValue">0%</div>
+      <div class="verdict-text" id="verdictText">TRUE</div>
+    </div>
+
+    <div style="font-size: 0.8rem; line-height: 1.5; color: #cbd5e1; margin-bottom: 12px;" id="summaryText"></div>
+
+    <button id="openDashboardBtn" style="background-color: #334155;">Run Full Verified Analysis →</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

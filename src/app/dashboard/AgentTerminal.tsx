@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Search, Globe, BrainCircuit, Loader2, Terminal, ShieldCheck } from "lucide-react";
 
 interface AgentTerminalProps {
-  stage: "idle" | "extracting" | "searching" | "synthesizing" | "complete";
+  stage: "idle" | "extracting" | "searching" | "debating" | "synthesizing" | "complete";
   logs: string[];
 }
 
@@ -12,7 +12,7 @@ export default function AgentTerminal({ stage, logs }: AgentTerminalProps) {
   const steps = [
     { id: "extracting", title: "CLAIM EXTRACTION", icon: Search, stageNum: "01" },
     { id: "searching", title: "LIVE WEB SEARCH", icon: Globe, stageNum: "02" },
-    { id: "synthesizing", title: "AI REASONING", icon: BrainCircuit, stageNum: "03" },
+    { id: "debating", title: "MULTI-AGENT DEBATE", icon: BrainCircuit, stageNum: "03" },
     { id: "complete", title: "GENERATING REPORT", icon: ShieldCheck, stageNum: "04" },
   ];
 
@@ -48,7 +48,7 @@ export default function AgentTerminal({ stage, logs }: AgentTerminalProps) {
           const active =
             stage === step.id ||
             (stage === "searching" && step.id === "extracting") ||
-            (stage === "synthesizing" && (step.id === "extracting" || step.id === "searching")) ||
+            (stage === "debating" && (step.id === "extracting" || step.id === "searching")) ||
             stage === "complete";
 
           return (

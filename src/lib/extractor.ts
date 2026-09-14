@@ -1,6 +1,9 @@
-import puppeteer, { type Browser, type Page } from 'puppeteer';
+import type { Page } from 'puppeteer';
 import { Readability } from '@mozilla/readability';
 import { JSDOM, VirtualConsole } from 'jsdom';
+import { assertSafeUrl, UnsafeUrlError } from './security/ssrf';
+import { isScrapingAllowed } from './security/robots';
+import { acquirePage } from './puppeteerPool';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -17,6 +20,12 @@ export interface ExtractionResult {
   usedFallback: boolean;
   /** Whether the content passed quality validation */
   qualityOk: boolean;
+  /** Byline / author string, when the page exposes one */
+  byline: string | null;
+  /** ISO publish date, when the page exposes one */
+  publishedAt: string | null;
+  /** Whether the page appears to be paywalled (distinct from "no article found") */
+  paywalled: boolean;
   /** Diagnostic details for server-side logging */
   diagnostics: ExtractionDiagnostics;
 }
@@ -30,6 +39,7 @@ export interface ExtractionDiagnostics {
   extractedCharCount: number;
   method: string;
   tiersAttempted: string[];
+  robotsBlocked: boolean;
   error: string | null;
 }
 
@@ -42,9 +52,20 @@ const MIN_QUALITY_LENGTH = 150;
 const FETCH_TIMEOUT_MS = 12_000;
 const PUPPETEER_NAV_TIMEOUT_MS = 15_000;
 const PUPPETEER_CONTENT_WAIT_MS = 3_000;
+const MAX_REDIRECTS = 5;
 
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
+
+const PAYWALL_INDICATORS: RegExp[] = [
+  /subscribe (now )?to (continue|read|keep) reading/i,
+  /this (article|content|story) is (for|reserved for) subscribers/i,
+  /you('ve| have) reached your (free )?article limit/i,
+  /already a subscriber\?/i,
+  /create a free account to (continue|read)/i,
+  /unlock (this|the full) (article|story)/i,
+  /sign in to (continue|read) reading/i,
+];
 
 /**
  * Domains / URL patterns to block in Puppeteer request interception.
@@ -195,7 +216,14 @@ export async function extractTextFromUrl(url: string): Promise<string> {
   // Log structured diagnostics server-side
   logDiagnostics(result.diagnostics);
 
+  if (result.diagnostics.robotsBlocked) {
+    throw new Error('This site\'s robots.txt disallows automated scraping of this page.');
+  }
+
   if (!result.qualityOk && result.text.length < MIN_QUALITY_LENGTH) {
+    if (result.paywalled) {
+      throw new Error('This page appears to be paywalled — its full article content could not be read.');
+    }
     throw new Error(
       'Unable to extract meaningful article content from this URL. ' +
       'The page may be behind a paywall, require a login, or contain no readable article text.'
@@ -218,8 +246,28 @@ export async function extractWithDiagnostics(url: string): Promise<ExtractionRes
     extractedCharCount: 0,
     method: 'none',
     tiersAttempted: [],
+    robotsBlocked: false,
     error: null,
   };
+
+  // --- SSRF guard: resolve and validate before any network call ---
+  try {
+    await assertSafeUrl(url);
+  } catch (e) {
+    if (e instanceof UnsafeUrlError) {
+      diagnostics.error = e.message;
+      return { text: '', method: 'fallback-body', rawLength: 0, usedFallback: true, qualityOk: false, byline: null, publishedAt: null, paywalled: false, diagnostics };
+    }
+    throw e;
+  }
+
+  // --- robots.txt guard ---
+  const allowed = await isScrapingAllowed(url).catch(() => true);
+  if (!allowed) {
+    diagnostics.robotsBlocked = true;
+    diagnostics.error = 'Disallowed by robots.txt';
+    return { text: '', method: 'fallback-body', rawLength: 0, usedFallback: true, qualityOk: false, byline: null, publishedAt: null, paywalled: false, diagnostics };
+  }
 
   // --- Tier 1: Lightweight fetch + Readability ---
   try {
@@ -251,6 +299,9 @@ export async function extractWithDiagnostics(url: string): Promise<ExtractionRes
     rawLength: 0,
     usedFallback: true,
     qualityOk: false,
+    byline: null,
+    publishedAt: null,
+    paywalled: false,
     diagnostics,
   };
 }
@@ -263,60 +314,89 @@ async function extractViaFetch(
   url: string,
   diagnostics: ExtractionDiagnostics,
 ): Promise<ExtractionResult | null> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-
+  let currentUrl = url;
+  let response: Response | null = null;
   const startTime = Date.now();
-  let response: Response;
 
-  try {
-    response = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': USER_AGENT,
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Cache-Control': 'no-cache',
-      },
-      redirect: 'follow',
-    });
-  } catch (e: any) {
-    if (e.name === 'AbortError') {
-      console.warn(`[Scraper] Fetch timed out after ${FETCH_TIMEOUT_MS}ms for ${url}`);
+  // Manually follow redirects (bounded) so each hop can be SSRF-validated —
+  // Node's automatic `redirect: 'follow'` would happily land on an internal
+  // address reached only via a redirect chain (DNS rebinding / open redirect).
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+    let hopResponse: Response;
+    try {
+      hopResponse = await fetch(currentUrl, {
+        signal: controller.signal,
+        redirect: 'manual',
+        headers: {
+          'User-Agent': USER_AGENT,
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Cache-Control': 'no-cache',
+        },
+      });
+    } catch (e: any) {
+      if (e.name === 'AbortError') {
+        console.warn(`[Scraper] Fetch timed out after ${FETCH_TIMEOUT_MS}ms for ${currentUrl}`);
+      }
+      throw e;
+    } finally {
+      clearTimeout(timeout);
     }
-    throw e;
-  } finally {
-    clearTimeout(timeout);
+
+    const isRedirect = hopResponse.status >= 300 && hopResponse.status < 400;
+    if (isRedirect) {
+      const location = hopResponse.headers.get('location');
+      if (!location) break;
+      const nextUrl = new URL(location, currentUrl).toString();
+      try {
+        await assertSafeUrl(nextUrl);
+      } catch {
+        console.warn(`[Scraper] Blocked unsafe redirect target: ${nextUrl}`);
+        return null;
+      }
+      currentUrl = nextUrl;
+      continue;
+    }
+
+    response = hopResponse;
+    break;
   }
 
+  if (!response) return null;
+
   diagnostics.httpStatus = response.status;
-  diagnostics.finalUrl = response.url || url;
+  diagnostics.finalUrl = currentUrl;
   diagnostics.navigationDurationMs = Date.now() - startTime;
 
   if (!response.ok) {
-    console.warn(`[Scraper] Fetch returned HTTP ${response.status} for ${url}`);
+    console.warn(`[Scraper] Fetch returned HTTP ${response.status} for ${currentUrl}`);
     return null;
   }
 
   const contentType = response.headers.get('content-type') || '';
   if (!contentType.includes('text/html') && !contentType.includes('application/xhtml')) {
-    console.warn(`[Scraper] Non-HTML content-type "${contentType}" for ${url}`);
+    console.warn(`[Scraper] Non-HTML content-type "${contentType}" for ${currentUrl}`);
     return null;
   }
 
   const html = await response.text();
   if (!html || html.length < 500) {
-    console.warn(`[Scraper] Fetch returned very short HTML (${html.length} chars) for ${url}`);
+    console.warn(`[Scraper] Fetch returned very short HTML (${html.length} chars) for ${currentUrl}`);
     return null;
   }
+
+  const paywalled = detectPaywall(html);
 
   // Parse with JSDOM + Readability
-  const extracted = parseHtmlToArticle(html, diagnostics.finalUrl);
-  if (!extracted) {
+  const parsed = parseHtmlToArticle(html, diagnostics.finalUrl);
+  if (!parsed) {
     return null;
   }
 
-  const cleaned = cleanText(extracted);
+  const cleaned = cleanText(parsed.text);
   const qualityOk = validateContentQuality(cleaned);
   const truncated = cleaned.substring(0, MAX_TEXT_LENGTH);
 
@@ -325,7 +405,7 @@ async function extractViaFetch(
 
   // If fetch-based extraction is too short or low quality, let Tier 2 try
   if (!qualityOk) {
-    console.warn(`[Scraper] Fetch extraction quality check failed (${cleaned.length} chars) for ${url}`);
+    console.warn(`[Scraper] Fetch extraction quality check failed (${cleaned.length} chars) for ${currentUrl}`);
     return null;
   }
 
@@ -335,6 +415,9 @@ async function extractViaFetch(
     rawLength: cleaned.length,
     usedFallback: false,
     qualityOk,
+    byline: parsed.byline,
+    publishedAt: parsed.publishedAt,
+    paywalled,
     diagnostics,
   };
 }
@@ -347,50 +430,32 @@ async function extractViaPuppeteer(
   url: string,
   diagnostics: ExtractionDiagnostics,
 ): Promise<ExtractionResult | null> {
-  let browser: Browser | null = null;
-  let page: Page | null = null;
+  const { page, release } = await acquirePage();
 
   try {
-    browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-extensions',
-        '--disable-background-networking',
-        '--disable-default-apps',
-        '--disable-sync',
-        '--disable-translate',
-        '--metrics-recording-only',
-        '--no-first-run',
-        '--mute-audio',
-        '--hide-scrollbars',
-        '--ignore-certificate-errors',
-      ],
-    });
-
-    page = await browser.newPage();
-
     // Set viewport and user agent
     await page.setViewport({ width: 1280, height: 800 });
     await page.setUserAgent(USER_AGENT);
 
-    // Enable request interception for aggressive blocking
+    // Enable request interception for aggressive blocking + a defense-in-depth
+    // block on obviously-internal navigation targets (the authoritative check
+    // already happened via assertSafeUrl before this tier ran).
     await page.setRequestInterception(true);
     page.on('request', (req) => {
       const resourceType = req.resourceType();
       const reqUrl = req.url();
 
-      // Block non-essential resource types
       if (BLOCKED_RESOURCE_TYPES.has(resourceType)) {
         req.abort('blockedbyclient');
         return;
       }
 
-      // Block known analytics/ads/tracking domains
       if (BLOCKED_URL_PATTERNS.some((pattern) => pattern.test(reqUrl))) {
+        req.abort('blockedbyclient');
+        return;
+      }
+
+      if (resourceType === 'document' && isObviouslyInternalHost(reqUrl)) {
         req.abort('blockedbyclient');
         return;
       }
@@ -441,22 +506,25 @@ async function extractViaPuppeteer(
       return null;
     }
 
+    const paywalled = detectPaywall(html);
+
     // Try Readability first
-    let extracted = parseHtmlToArticle(html, diagnostics.finalUrl);
+    let parsed = parseHtmlToArticle(html, diagnostics.finalUrl);
     let method: ExtractionResult['method'] = 'puppeteer';
 
     // Fallback: raw body text with boilerplate removal (Tier 3)
-    if (!extracted || !validateContentQuality(extracted)) {
+    if (!parsed || !validateContentQuality(parsed.text)) {
       diagnostics.tiersAttempted.push('fallback-body');
-      extracted = extractBodyTextWithCleanup(html, diagnostics.finalUrl);
+      const bodyText = extractBodyTextWithCleanup(html, diagnostics.finalUrl);
+      parsed = bodyText ? { text: bodyText, byline: null, publishedAt: null } : null;
       method = 'fallback-body';
     }
 
-    if (!extracted) {
+    if (!parsed) {
       return null;
     }
 
-    const cleaned = cleanText(extracted);
+    const cleaned = cleanText(parsed.text);
     const qualityOk = validateContentQuality(cleaned);
     const truncated = cleaned.substring(0, MAX_TEXT_LENGTH);
 
@@ -469,16 +537,30 @@ async function extractViaPuppeteer(
       rawLength: cleaned.length,
       usedFallback: method === 'fallback-body',
       qualityOk,
+      byline: parsed.byline,
+      publishedAt: parsed.publishedAt,
+      paywalled,
       diagnostics,
     };
   } finally {
-    // Guaranteed cleanup — close page then browser
-    try {
-      if (page) await page.close();
-    } catch { /* ignore close errors */ }
-    try {
-      if (browser) await browser.close();
-    } catch { /* ignore close errors */ }
+    await release();
+  }
+}
+
+function isObviouslyInternalHost(rawUrl: string): boolean {
+  try {
+    const host = new URL(rawUrl).hostname.toLowerCase();
+    return (
+      host === 'localhost' ||
+      host === '169.254.169.254' ||
+      host === 'metadata.google.internal' ||
+      /^127\./.test(host) ||
+      /^10\./.test(host) ||
+      /^192\.168\./.test(host) ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(host)
+    );
+  } catch {
+    return false;
   }
 }
 
@@ -495,11 +577,18 @@ async function waitForArticleContent(page: Page, timeoutMs: number): Promise<voi
 // HTML → Article Text Parsing
 // ---------------------------------------------------------------------------
 
+interface ParsedArticle {
+  text: string;
+  byline: string | null;
+  publishedAt: string | null;
+}
+
 /**
- * Parse raw HTML into article text using JSDOM + Readability.
- * Suppresses CSS parsing warnings.
+ * Parse raw HTML into article text using JSDOM + Readability, also surfacing
+ * byline and publish-date signals (§3.10 author/byline & publisher
+ * transparency) when the page exposes them.
  */
-function parseHtmlToArticle(html: string, url: string): string | null {
+function parseHtmlToArticle(html: string, url: string): ParsedArticle | null {
   // Create a virtual console that suppresses CSS parse warnings
   const virtualConsole = new VirtualConsole();
   virtualConsole.on('error', () => { /* suppress JSDOM errors like CSS parse failures */ });
@@ -514,6 +603,7 @@ function parseHtmlToArticle(html: string, url: string): string | null {
   });
 
   const document = dom.window.document;
+  const publishedAt = extractPublishedDate(document);
 
   // Remove boilerplate elements before Readability processes them
   removeBoilerplateElements(document);
@@ -527,7 +617,57 @@ function parseHtmlToArticle(html: string, url: string): string | null {
     return null;
   }
 
-  return article.textContent;
+  return {
+    text: article.textContent,
+    byline: article.byline?.trim() || null,
+    publishedAt,
+  };
+}
+
+/** Best-effort publish-date extraction from common meta tags and JSON-LD. */
+function extractPublishedDate(document: Document): string | null {
+  const metaSelectors = [
+    'meta[property="article:published_time"]',
+    'meta[name="article:published_time"]',
+    'meta[property="og:published_time"]',
+    'meta[name="publish-date"]',
+    'meta[name="publishdate"]',
+    'meta[name="date"]',
+    'meta[itemprop="datePublished"]',
+  ];
+  for (const selector of metaSelectors) {
+    const content = document.querySelector(selector)?.getAttribute('content');
+    if (content) {
+      const parsed = new Date(content);
+      if (!isNaN(parsed.getTime())) return parsed.toISOString();
+    }
+  }
+
+  const timeEl = document.querySelector('time[datetime]');
+  const dt = timeEl?.getAttribute('datetime');
+  if (dt) {
+    const parsed = new Date(dt);
+    if (!isNaN(parsed.getTime())) return parsed.toISOString();
+  }
+
+  const ldJsonScripts = Array.from(document.querySelectorAll('script[type="application/ld+json"]'));
+  for (const script of ldJsonScripts) {
+    try {
+      const data = JSON.parse(script.textContent || '{}');
+      const candidates = Array.isArray(data) ? data : [data];
+      for (const candidate of candidates) {
+        const datePublished = candidate?.datePublished || candidate?.dateCreated;
+        if (datePublished) {
+          const parsed = new Date(datePublished);
+          if (!isNaN(parsed.getTime())) return parsed.toISOString();
+        }
+      }
+    } catch {
+      // malformed JSON-LD — skip
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -579,6 +719,17 @@ function removeBoilerplateElements(document: Document): void {
 // ---------------------------------------------------------------------------
 // Content Cleaning & Validation
 // ---------------------------------------------------------------------------
+
+/**
+ * Detects paywalled content so it can be labeled distinctly from "page had no
+ * article" instead of silently falling into the same rejection bucket.
+ */
+function detectPaywall(html: string): boolean {
+  // Only scan a bounded slice — paywall banners are near the article body,
+  // and this avoids a pathological cost on very large pages.
+  const slice = html.slice(0, 50_000);
+  return PAYWALL_INDICATORS.some((pattern) => pattern.test(slice));
+}
 
 /**
  * Clean extracted text: collapse whitespace, remove common junk patterns.
@@ -646,6 +797,9 @@ function validateContentQuality(text: string): boolean {
 
   return true;
 }
+
+// Exported for unit testing (§7.1) — pure functions, no network/browser required.
+export const __testables = { validateContentQuality, cleanText, detectPaywall };
 
 // ---------------------------------------------------------------------------
 // Logging

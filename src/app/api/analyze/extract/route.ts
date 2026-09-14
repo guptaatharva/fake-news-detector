@@ -2,86 +2,47 @@ import { z } from 'zod';
 import { extractTextFromUrl } from '@/lib/extractor';
 import { nvidiaGenerateObject, NvidiaError } from '@/lib/nvidia';
 import { NextRequest, NextResponse } from 'next/server';
+import { guardApiRequest } from '@/lib/security/apiGuard';
+import { UnsafeUrlError } from '@/lib/security/ssrf';
+import { deduplicateClaims } from '@/lib/claimDedup';
+import { recordSubmissionAndCheckAbuse, logAbuseEvent } from '@/lib/security/abuseMonitor';
 
 export const maxDuration = 300;
 
+// Request body size caps (§2.5): a multi-megabyte `text` payload otherwise goes
+// straight into an LLM prompt at full cost, and an unbounded `url` string is
+// free-form attacker input.
 const RequestSchema = z.object({
-  url: z.string().optional(),
-  text: z.string().optional(),
+  url: z.string().max(2048).optional(),
+  text: z.string().max(50_000).optional(),
 }).refine(data => data.url || data.text, {
   message: "Either URL or text must be provided.",
 });
 
-function deduplicateClaims(rawClaims: string[]): string[] {
-  const deduped: string[] = [];
-  const stopWords = new Set([
-    'the', 'a', 'an', 'in', 'on', 'at', 'by', 'for', 'with', 'about', 'against',
-    'between', 'into', 'through', 'during', 'before', 'after', 'above', 'below',
-    'to', 'from', 'up', 'down', 'of', 'off', 'over', 'under', 'again', 'further',
-    'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any',
-    'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor',
-    'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 'can', 'will',
-    'just', 'should', 'now', 'that', 'this', 'these', 'those', 'is', 'are', 'was',
-    'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does',
-    'did', 'doing', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while'
-  ]);
-
-  const getSignificantTokens = (text: string): Set<string> => {
-    return new Set(
-      text
-        .toLowerCase()
-        .replace(/[^\w\s]/g, '')
-        .split(/\s+/)
-        .filter((w) => w.length > 2 && !stopWords.has(w))
-    );
-  };
-
-  for (const raw of rawClaims) {
-    const trimmed = raw.trim();
-    if (!trimmed || trimmed.length < 15) continue;
-
-    const tokens = getSignificantTokens(trimmed);
-    if (tokens.size < 3) continue;
-
-    let isDuplicate = false;
-    for (const existing of deduped) {
-      if (existing.toLowerCase() === trimmed.toLowerCase()) {
-        isDuplicate = true;
-        break;
-      }
-
-      const existingTokens = getSignificantTokens(existing);
-      let intersection = 0;
-      for (const t of tokens) {
-        if (existingTokens.has(t)) intersection++;
-      }
-      const union = new Set([...tokens, ...existingTokens]).size;
-      const jaccard = union > 0 ? intersection / union : 0;
-
-      const minTokens = Math.min(tokens.size, existingTokens.size);
-      const overlap = minTokens > 0 ? intersection / minTokens : 0;
-
-      if (jaccard > 0.65 || overlap > 0.85) {
-        isDuplicate = true;
-        break;
-      }
-    }
-
-    if (!isDuplicate) {
-      deduped.push(trimmed);
-    }
-  }
-
-  return deduped;
-}
-
 export async function POST(req: NextRequest) {
+  const guard = await guardApiRequest(req, { scope: 'analyze:extract', limit: 12, windowMs: 60_000, requireAuth: true });
+  if (!guard.ok) return guard.response;
+
   try {
     const body = await req.json();
     const result = RequestSchema.safeParse(body);
 
     if (!result.success) {
       return NextResponse.json({ error: result.error.errors[0].message }, { status: 400 });
+    }
+
+    // §9.4: monitoring-only — logs + persists a warning on repeated identical
+    // submissions from the same identity, doesn't block the request.
+    if (guard.userId) {
+      const abuseCheck = recordSubmissionAndCheckAbuse(guard.userId, result.data.url || result.data.text || '');
+      if (abuseCheck.isAbusive) {
+        void logAbuseEvent(
+          guard.userId,
+          'analyze:extract',
+          'Same content resubmitted repeatedly in a short window',
+          abuseCheck.occurrences,
+        );
+      }
     }
 
     let contentToAnalyze = result.data.text || '';
@@ -97,11 +58,12 @@ export async function POST(req: NextRequest) {
         contentToAnalyze = await extractTextFromUrl(rawUrl);
         console.log(`[Extract API] Extracted ${contentToAnalyze.length} chars from ${rawUrl}`);
       } catch (error: any) {
-        // This is a SCRAPER error, not a Gemini error — handle separately
+        // This is a SCRAPER error, not an LLM error — handle separately
         console.error(`[Extract API] Scraper error for ${result.data.url}:`, error.message);
+        const status = error instanceof UnsafeUrlError ? 400 : 422;
         return NextResponse.json(
           { error: error.message || "Failed to extract content from the provided URL." },
-          { status: 422 }
+          { status }
         );
       }
     }

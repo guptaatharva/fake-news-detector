@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { ShieldCheck, ShieldAlert, AlertTriangle, HelpCircle, Link as LinkIcon, FileText, Calendar } from "lucide-react";
+import { ShieldCheck, ShieldAlert, AlertTriangle, HelpCircle, Link as LinkIcon, FileText, Calendar, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
 export default async function HistoryPage() {
@@ -171,6 +171,15 @@ export default async function HistoryPage() {
                     {analysis.confidence}% CONFIDENCE
                   </span>
                 </div>
+
+                <Link
+                  href={`/dashboard?recheckId=${analysis.id}`}
+                  className="inline-flex items-center justify-center gap-1.5 text-[10px] font-mono font-bold text-muted-foreground hover:text-neonRed uppercase tracking-widest transition-colors"
+                  title="News develops — re-run this analysis to see if the verdict still holds"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  <span>RE-CHECK THIS ANALYSIS</span>
+                </Link>
               </div>
             );
           })}

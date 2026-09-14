@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Database, Link2, ExternalLink, ShieldCheck, Sparkles } from "lucide-react";
+import { Database, Link2, ExternalLink, ShieldCheck, Sparkles, SearchX } from "lucide-react";
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import type { ScrapedSource, Claim } from "@/context/AnalysisContext";
 
@@ -24,21 +24,13 @@ interface EvidenceGraphProps {
   confidenceScore?: number;
 }
 
-// Fallback curated sources with guaranteed live HTTPS URLs
-const FALLBACK_SOURCES: EvidenceSourceNode[] = [
-  { id: "src-1", publisher: "Reuters", domain: "reuters.com", url: "https://www.reuters.com", confidence: 96, title: "Reuters Global Wire Service", summary: "International factual reporting and multi-bureau verification.", type: "news", relationship: "Wire Reporting" },
-  { id: "src-2", publisher: "AP News", domain: "apnews.com", url: "https://apnews.com", confidence: 98, title: "Associated Press News", summary: "Primary investigative dispatch confirming core verifiable assertions.", type: "news", relationship: "Primary Wire" },
-  { id: "src-3", publisher: "WHO", domain: "who.int", url: "https://www.who.int", confidence: 99, title: "World Health Organization", summary: "Official epidemiological surveillance datasets and global directives.", type: "official", relationship: "Official Record" },
-  { id: "src-4", publisher: "Nature", domain: "nature.com", url: "https://www.nature.com", confidence: 97, title: "Nature International Journal", summary: "Peer-reviewed scientific methodology and empirical research.", type: "academic", relationship: "Peer Review" },
-  { id: "src-5", publisher: "BBC News", domain: "bbc.com", url: "https://www.bbc.com/news", confidence: 94, title: "BBC World Service", summary: "Independent multi-jurisdictional reporting and factual corroboration.", type: "news", relationship: "Corroboration" },
-  { id: "src-6", publisher: "Science", domain: "science.org", url: "https://www.science.org", confidence: 98, title: "Science / AAAS", summary: "Empirical evidentiary findings and peer-reviewed laboratory validation.", type: "academic", relationship: "Empirical Study" },
-  { id: "src-7", publisher: "Gov.uk", domain: "gov.uk", url: "https://www.gov.uk", confidence: 99, title: "UK Official Government Services", summary: "Statutory governmental publications and policy documentation.", type: "official", relationship: "Official Gazette" },
-  { id: "src-8", publisher: "The Guardian", domain: "theguardian.com", url: "https://www.theguardian.com", confidence: 91, title: "The Guardian Investigations", summary: "In-depth investigative journalism and background reporting.", type: "news", relationship: "Investigative" },
-  { id: "src-9", publisher: "The Lancet", domain: "thelancet.com", url: "https://www.thelancet.com", confidence: 98, title: "The Lancet Medical Journal", summary: "Authoritative clinical trials and biomedical assessments.", type: "academic", relationship: "Clinical Evidence" },
-  { id: "src-10", publisher: "Financial Times", domain: "ft.com", url: "https://www.ft.com", confidence: 93, title: "Financial Times Reporting", summary: "Market data and verified financial statements.", type: "news", relationship: "Market Data" },
-  { id: "src-11", publisher: "CDC", domain: "cdc.gov", url: "https://www.cdc.gov", confidence: 99, title: "Centers for Disease Control", summary: "Public health surveillance and epidemiological datasets.", type: "official", relationship: "Public Registry" },
-  { id: "src-12", publisher: "Bloomberg", domain: "bloomberg.com", url: "https://www.bloomberg.com", confidence: 92, title: "Bloomberg News", summary: "Real-time syndicated market reporting.", type: "news", relationship: "Syndicated Dispatch" },
-];
+// NOTE: this component used to fall back to a hardcoded list of famous
+// outlets (Reuters, AP, WHO, Nature, BBC, CDC…) with made-up confidence
+// scores whenever real scraped evidence was thin, rendered as if they had
+// actually been consulted for this analysis. That's a serious trust/
+// integrity issue for a fact-checking tool — a user could believe WHO was
+// checked when it wasn't (§1.5). When there is genuinely no evidence, the
+// graph now shows an honest empty state instead.
 
 function sanitizeUrl(rawUrl?: string, domain?: string): string {
   if (!rawUrl || rawUrl.trim().length === 0) {
@@ -217,11 +209,6 @@ export default function EvidenceGraph({
           });
         }
       });
-    }
-
-    // D. Default fallback set if no analysis results yet
-    if (map.size === 0) {
-      return FALLBACK_SOURCES;
     }
 
     return Array.from(map.values());
@@ -476,10 +463,30 @@ export default function EvidenceGraph({
     return Math.min(950, 680 + (sources.length - 16) * 18);
   }, [sources.length]);
 
+  // The height clamp below (72vh) assumes a wide, near-full-width placement.
+  // When this component is embedded in a narrower column, sizing purely off
+  // viewport height produces a tall, narrow box that feels out of proportion
+  // — so once the container's real width is known, a narrow container gets a
+  // height derived from its own width instead, aiming for a landscape-ish
+  // box rather than a viewport-tall one.
+  const isNarrowContainer = dimensions.width > 0 && dimensions.width < 640;
+  const canvasHeight = isNarrowContainer
+    ? `${Math.min(680, Math.max(420, Math.round(dimensions.width * 1.15)))}px`
+    : `clamp(${dynamicMinHeight}px, 72vh, 1000px)`;
+
   return (
-    <div className="w-full bg-graphite-surface border border-graphite-border rounded-2xl p-4 sm:p-6 md:p-8 relative flex flex-col shadow-2xl">
-      {/* Header bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 relative z-10 border-b border-graphite-border pb-4">
+    <div
+      className={`w-full bg-graphite-surface border border-graphite-border rounded-2xl relative flex flex-col shadow-2xl ${
+        isNarrowContainer ? "p-4 sm:p-5" : "p-4 sm:p-6 md:p-8"
+      }`}
+    >
+      {/* Header bar — a narrow container (this component sitting in a column
+          rather than at full page width) stacks the title over the HUD badge
+          even on a wide viewport, since Tailwind's sm:/md: breakpoints react
+          to the viewport, not to how much room this component actually has. */}
+      <div
+        className={`flex ${isNarrowContainer ? "flex-col items-start" : "flex-col sm:flex-row sm:items-center"} justify-between gap-4 mb-5 relative z-10 border-b border-graphite-border pb-4`}
+      >
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-neonRed/10 border border-neonRed/30 flex items-center justify-center">
             <Link2 className="w-5 h-5 text-neonRed" />
@@ -511,7 +518,7 @@ export default function EvidenceGraph({
         ref={containerRef}
         className="relative w-full rounded-xl border border-graphite-border bg-graphite-bg overflow-hidden select-none focus:outline-none"
         style={{
-          height: `clamp(${dynamicMinHeight}px, 72vh, 1000px)`,
+          height: canvasHeight,
           boxShadow: "inset 0 0 100px rgba(0,0,0,0.85)",
         }}
       >
@@ -526,6 +533,21 @@ export default function EvidenceGraph({
 
         {/* Deep ambient radial glow behind center */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] bg-neonRed/10 rounded-full blur-[120px] pointer-events-none z-0" />
+
+        {/* Honest empty state (§1.5): no fabricated sources are ever substituted here. */}
+        {sources.length === 0 && (
+          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 px-8 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-graphite-elevated border border-graphite-border flex items-center justify-center">
+              <SearchX className="w-7 h-7 text-muted-foreground" />
+            </div>
+            <p className="font-mono text-sm font-bold text-foreground uppercase tracking-widest">
+              Insufficient Independent Evidence Found
+            </p>
+            <p className="text-xs text-muted-foreground max-w-sm leading-relaxed">
+              No independently corroborating sources were located for this analysis. The verdict above reflects that absence — it is not backed by external verification.
+            </p>
+          </div>
+        )}
 
         {/* Central Claim Origin Node */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none flex flex-col items-center">

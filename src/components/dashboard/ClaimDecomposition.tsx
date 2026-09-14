@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { GitBranch, ShieldCheck, ShieldAlert, XOctagon, ExternalLink, ChevronDown, ChevronUp, Newspaper } from "lucide-react";
+import { GitBranch, ShieldCheck, ShieldAlert, XOctagon, ExternalLink, ChevronDown, ChevronUp, Newspaper, Drama, Clock, RefreshCw, ShieldQuestion, TriangleAlert, ThumbsUp, ThumbsDown, Minus } from "lucide-react";
 
 export interface EvidenceSource {
   title?: string;
@@ -14,30 +14,70 @@ export interface EvidenceSource {
   snippet?: string;
   summary?: string;
   credibility?: "HIGH" | "MEDIUM" | "LOW";
+  stance?: "SUPPORTS" | "CONTRADICTS" | "NEUTRAL" | "IRRELEVANT";
+  publishedAt?: string;
 }
 
 export interface Claim {
   id: string;
   text: string;
-  verdict: "VERIFIED" | "PARTIALLY VERIFIED" | "MISLEADING" | "UNVERIFIED" | "FALSE";
+  verdict: "VERIFIED" | "PARTIALLY VERIFIED" | "MISLEADING" | "UNVERIFIED" | "FALSE" | "SATIRE";
   confidence: number;
   explanation?: string;
   sourceUrl?: string;
   evidence?: EvidenceSource[];
+  temporalStatus?: string;
+  isSatire?: boolean;
+  /** Set when this claim's debate call failed outright (§8.3 partial-failure state). */
+  failed?: boolean;
+  injectionAttemptDetected?: boolean;
+  lowSourceDiversity?: boolean;
+  onRetry?: () => void;
 }
 
 interface ClaimDecompositionProps {
   claims: Claim[];
 }
 
+function formatRecency(publishedAt?: string): string | null {
+  if (!publishedAt) return null;
+  const parsed = new Date(publishedAt);
+  if (isNaN(parsed.getTime())) return null;
+  const ageDays = Math.floor((Date.now() - parsed.getTime()) / (1000 * 60 * 60 * 24));
+  if (ageDays < 0) return null;
+  if (ageDays === 0) return "today";
+  if (ageDays === 1) return "1 day ago";
+  if (ageDays < 30) return `${ageDays} days ago`;
+  if (ageDays < 365) return `${Math.round(ageDays / 30)} mo ago`;
+  return `${Math.round(ageDays / 365)} yr ago`;
+}
+
+const STANCE_CONFIG: Record<string, { icon: typeof ThumbsUp; label: string; color: string }> = {
+  SUPPORTS: { icon: ThumbsUp, label: "Supports", color: "text-emerald-400" },
+  CONTRADICTS: { icon: ThumbsDown, label: "Contradicts", color: "text-rose-400" },
+  NEUTRAL: { icon: Minus, label: "Neutral", color: "text-zinc-400" },
+  IRRELEVANT: { icon: Minus, label: "Irrelevant", color: "text-zinc-500" },
+};
+
 export default function ClaimDecomposition({ claims }: ClaimDecompositionProps) {
   const [expandedClaims, setExpandedClaims] = useState<Record<string, boolean>>({});
+  const [retrying, setRetrying] = useState<Record<string, boolean>>({});
 
   const toggleClaimSources = (claimKey: string) => {
     setExpandedClaims((prev) => ({
       ...prev,
       [claimKey]: !prev[claimKey],
     }));
+  };
+
+  const handleRetry = async (claimKey: string, onRetry?: () => void | Promise<void>) => {
+    if (!onRetry) return;
+    setRetrying((prev) => ({ ...prev, [claimKey]: true }));
+    try {
+      await onRetry();
+    } finally {
+      setRetrying((prev) => ({ ...prev, [claimKey]: false }));
+    }
   };
 
   const getVerdictStyles = (verdict: string) => {
@@ -47,6 +87,7 @@ export default function ClaimDecomposition({ claims }: ClaimDecompositionProps) 
       case "MISLEADING": return { color: "text-verificator-mixture", border: "border-verificator-mixture/30", bg: "bg-verificator-mixture/10", icon: ShieldAlert };
       case "UNVERIFIED": return { color: "text-verificator-unverifiable", border: "border-verificator-unverifiable/30", bg: "bg-verificator-unverifiable/10", icon: ShieldAlert };
       case "FALSE": return { color: "text-verificator-false", border: "border-verificator-false/30", bg: "bg-verificator-false/10", icon: XOctagon };
+      case "SATIRE": return { color: "text-purple-400", border: "border-purple-500/30", bg: "bg-purple-500/10", icon: Drama };
       default: return { color: "text-muted-foreground", border: "border-graphite-border", bg: "bg-graphite-bg", icon: ShieldCheck };
     }
   };
@@ -111,7 +152,7 @@ export default function ClaimDecomposition({ claims }: ClaimDecompositionProps) 
             >
               {/* Timeline dot */}
               <div className={`absolute left-[15px] top-4 w-2.5 h-2.5 rounded-full ${style.bg} border border-background z-10 shadow-[0_0_0_4px_rgba(11,11,13,0.9)]`} />
-              
+
               <div className={`p-5 rounded-2xl bg-graphite-bg border ${style.border} hover:border-neonRed/50 transition-all duration-300 group shadow-sm`}>
                 <div className="flex items-start justify-between gap-4 mb-3">
                   <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest bg-graphite-elevated px-2 py-1 rounded border border-graphite-border">
@@ -122,7 +163,7 @@ export default function ClaimDecomposition({ claims }: ClaimDecompositionProps) 
                     {claim.verdict}
                   </div>
                 </div>
-                
+
                 <p className="text-sm text-foreground leading-relaxed mb-3 break-words">
                   "{claim.text}"
                 </p>
@@ -133,9 +174,51 @@ export default function ClaimDecomposition({ claims }: ClaimDecompositionProps) 
                   </p>
                 )}
 
+                {/* Partial-failure state (§8.3): visually distinct from a fully-evidenced claim */}
+                {claim.failed && (
+                  <div className="flex items-center justify-between gap-3 mb-4 p-3 rounded-xl bg-verificator-warning/10 border border-verificator-warning/30">
+                    <div className="flex items-center gap-2 text-verificator-warning">
+                      <TriangleAlert className="w-3.5 h-3.5 shrink-0" />
+                      <span className="text-[11px] font-mono">No independent evidence found — verdict is unverifiable, not a confirmed assessment.</span>
+                    </div>
+                    {claim.onRetry && (
+                      <button
+                        type="button"
+                        onClick={() => handleRetry(claimKey, claim.onRetry)}
+                        disabled={retrying[claimKey]}
+                        className="shrink-0 inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-verificator-warning hover:text-foreground uppercase tracking-wider disabled:opacity-50 cursor-pointer"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${retrying[claimKey] ? 'animate-spin' : ''}`} />
+                        {retrying[claimKey] ? 'RETRYING' : 'RETRY'}
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Temporal mismatch flag (§3.7): "true, but from 2019, shared as if current" */}
+                {claim.temporalStatus === 'PREVIOUSLY_TRUE_NOW_FALSE' && (
+                  <div className="flex items-center gap-2 mb-3 text-amber-400">
+                    <Clock className="w-3.5 h-3.5 shrink-0" />
+                    <span className="text-[11px] font-mono">This was true in the past but no longer reflects the current situation.</span>
+                  </div>
+                )}
+
+                {/* Prompt-injection warning (§2.3) */}
+                {claim.injectionAttemptDetected && (
+                  <div className="flex items-center gap-2 mb-3 text-rose-400">
+                    <ShieldQuestion className="w-3.5 h-3.5 shrink-0" />
+                    <span className="text-[11px] font-mono">One or more sources contained text resembling an AI-manipulation attempt — it was flagged and ignored, not trusted as an instruction.</span>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between pt-3 border-t border-graphite-border flex-wrap gap-2">
                   <div className="font-mono text-[10px] text-muted-foreground flex items-center gap-1">
                     CONFIDENCE: <span className={style.color}>{claim.confidence}%</span>
+                    {claim.lowSourceDiversity && (
+                      <span className="ml-2 text-verificator-warning" title="Fewer than 2 independent domains corroborated this claim">
+                        (LOW SOURCE DIVERSITY)
+                      </span>
+                    )}
                   </div>
 
                   {displaySources.length > 0 ? (
@@ -151,7 +234,7 @@ export default function ClaimDecomposition({ claims }: ClaimDecompositionProps) 
                     </button>
                   ) : (
                     <span className="text-[10px] font-mono text-muted-foreground/60 uppercase tracking-widest">
-                      EVIDENCE MAPPED
+                      NO INDEPENDENT EVIDENCE FOUND
                     </span>
                   )}
                 </div>
@@ -200,6 +283,9 @@ export default function ClaimDecomposition({ claims }: ClaimDecompositionProps) 
                               source.title ||
                               'Reporting and factual documentation verifying this claim.';
 
+                            const stanceInfo = source.stance ? STANCE_CONFIG[source.stance] : null;
+                            const recency = formatRecency(source.publishedAt);
+
                             return (
                               <a
                                 key={`${claimKey}-src-${sIdx}`}
@@ -239,15 +325,23 @@ export default function ClaimDecomposition({ claims }: ClaimDecompositionProps) 
                                   </p>
                                 </div>
 
-                                {/* Clean Domain & External Link Button */}
-                                <div className="flex items-center justify-between pt-1.5 border-t border-graphite-border/50 text-[10px] font-mono">
-                                  <span className="text-muted-foreground/80 truncate max-w-[75%]">
-                                    {domain}
-                                  </span>
-                                  <span className="inline-flex items-center gap-1 text-neonRed group-hover/src:text-neonRed-bright font-bold transition-colors">
-                                    <span className="hidden sm:inline text-[9px] tracking-wider">VISIT</span>
-                                    <ExternalLink className="w-3 h-3 transition-transform group-hover/src:translate-x-0.5 group-hover/src:-translate-y-0.5" />
-                                  </span>
+                                {/* Stance, recency, clean domain & external link button */}
+                                <div className="flex items-center justify-between pt-1.5 border-t border-graphite-border/50 text-[10px] font-mono gap-2">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <span className="text-muted-foreground/80 truncate max-w-[90px]">{domain}</span>
+                                    {recency && <span className="text-muted-foreground/60 shrink-0">· {recency}</span>}
+                                  </div>
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    {stanceInfo && (
+                                      <span className={`inline-flex items-center gap-1 ${stanceInfo.color}`} title={stanceInfo.label}>
+                                        <stanceInfo.icon className="w-3 h-3" />
+                                      </span>
+                                    )}
+                                    <span className="inline-flex items-center gap-1 text-neonRed group-hover/src:text-neonRed-bright font-bold transition-colors">
+                                      <span className="hidden sm:inline text-[9px] tracking-wider">VISIT</span>
+                                      <ExternalLink className="w-3 h-3 transition-transform group-hover/src:translate-x-0.5 group-hover/src:-translate-y-0.5" />
+                                    </span>
+                                  </div>
                                 </div>
                               </a>
                             );

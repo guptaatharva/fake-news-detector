@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseConfig } from "./config";
 
-const protectedPaths = ["/profile", "/dashboard/history"];
+const protectedPaths = ["/profile", "/dashboard/history", "/admin"];
 
 function isProtectedPath(pathname: string) {
   return protectedPaths.some(

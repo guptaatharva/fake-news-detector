@@ -1,0 +1,465 @@
+[
+  {
+    "id": "true-1",
+    "claim": "Mount Everest is the tallest mountain above sea level on Earth.",
+    "category": "clear true",
+    "expected": "TRUE",
+    "notes": "Undisputed geographic fact.",
+    "sourceDomains": [
+      "science.howstuffworks.com",
+      "britannica.com",
+      "scienceblog.com"
+    ],
+    "debate": {
+      "actualVerdict": "TRUE",
+      "actualBucket": "TRUE",
+      "confidence": 68,
+      "agentAgreementScore": 0.95,
+      "isSatire": false,
+      "temporalStatus": "CURRENTLY_VALID",
+      "explanation": "The claim specifies 'above sea level,' and the consensus across agents is that Mount Everest's summit at 8,848.86 meters above mean sea level is the highest elevation on Earth. The opposition's arguments concern base-to-peak height (Mauna Kea), which is a different measurement and does not contradict the claim's explicit sea-level qualifier. The context agent confirms the claim is technically true under the sea-level constraint, and the temporal agent rates it as currently valid based on the 2020 joint Nepal-China announcement and 2026 sources. Therefore, the claim is fully accurate as stated.",
+      "correct": true
+    },
+    "baseline": {
+      "actualVerdict": "TRUE",
+      "actualBucket": "TRUE",
+      "explanation": "Both Britannica and ScienceBlog confirm that Mount Everest is the highest point above mean sea level, making it the tallest mountain when measured from sea level. Britannica states Everest is the tallest mountain in the world if measuring from sea level to peak, and ScienceBlog explicitly says 'Mount Everest is the highest point on Earth above mean sea level' and 'By that standard, Everest is still first.'",
+      "correct": true
+    },
+    "elapsedSec": 230
+  },
+  {
+    "id": "true-2",
+    "claim": "Water boils at 100 degrees Celsius at standard atmospheric pressure.",
+    "category": "clear true",
+    "expected": "TRUE",
+    "notes": "Basic, undisputed physical fact.",
+    "sourceDomains": [
+      "mexperience.com",
+      "spacedaily.com",
+      "education.nationalgeographic.org"
+    ],
+    "debate": {
+      "actualVerdict": "TRUE",
+      "actualBucket": "TRUE",
+      "confidence": 53,
+      "agentAgreementScore": 0.95,
+      "isSatire": false,
+      "temporalStatus": "CURRENTLY_VALID",
+      "explanation": "The claim explicitly states the condition 'at standard atmospheric pressure.' The support agents provide multiple sources confirming that water boils at 100°C under that exact condition. The opposition arguments describe boiling points at reduced pressures (higher elevations), which do not contradict the claim because the claim is qualified by standard pressure. The context agent notes the claim omits explicit dependence on pressure and elevation, but the claim itself includes the pressure qualification, making it accurate. The temporal agent confirms the fact remains currently valid. Therefore, the claim is fully true as stated.",
+      "correct": true
+    },
+    "baseline": {
+      "actualVerdict": "TRUE",
+      "actualBucket": "TRUE",
+      "explanation": "All three sources confirm that water boils at 100°C at standard atmospheric pressure (sea level).",
+      "correct": true
+    },
+    "elapsedSec": 246.6
+  },
+  {
+    "id": "true-3",
+    "claim": "The Great Barrier Reef has experienced significant coral bleaching events due to rising ocean temperatures.",
+    "category": "clear true",
+    "expected": "TRUE",
+    "notes": "Well-documented, extensively reported.",
+    "sourceDomains": [
+      "aims.gov.au",
+      "nature.com",
+      "si.edu"
+    ],
+    "debate": {
+      "actualVerdict": "TRUE",
+      "actualBucket": "TRUE",
+      "confidence": 80,
+      "agentAgreementScore": 0.95,
+      "isSatire": false,
+      "temporalStatus": "CURRENTLY_VALID",
+      "explanation": "The claim is strongly supported by all agent findings. The Support Agent provides multiple lines of evidence linking significant coral bleaching on the Great Barrier Reef to rising ocean temperatures, with 95% confidence. The Opposition Agent finds no contradicting arguments (0% confidence). The Context Agent confirms the claim aligns with multiple global bleaching events (1998, 2010, 2014-2017, 2023+) and notes the Great Barrier Reef has been significantly impacted. The Temporal Agent rates the claim as CURRENTLY_VALID, citing recent sources (2026) documenting ongoing bleaching events in 2023-2025 driven by climate change-induced heat stress. All three provided sources (AIMS, Nature, Smithsonian) directly support the claim, with no contradictory or neutral evidence present.",
+      "correct": true
+    },
+    "baseline": {
+      "actualVerdict": "TRUE",
+      "actualBucket": "TRUE",
+      "explanation": "The Australian Institute of Marine Science (AIMS) reports that climate change-driven heat stress has become an increasingly important driver of coral loss in Australia, explicitly referencing the 4th Global Coral Bleaching Event which includes mass bleaching events in 2024 and 2025. Additionally, the 2014–2017 global bleaching event affected half of the world's reefs, and the Great Barrier Reef is part of Australia's reef system. This confirms significant coral bleaching events due to rising ocean temperatures.",
+      "correct": true
+    },
+    "elapsedSec": 351.7
+  },
+  {
+    "id": "true-4",
+    "claim": "The Eiffel Tower grows several centimeters taller in summer due to thermal expansion of its iron structure.",
+    "category": "surprising but exaggerated (corrected label)",
+    "expected": "FALSE",
+    "notes": "The real vertical growth is millimeters, not centimeters — this wording overstates the magnitude by ~10x, so a correct system should downgrade it despite the underlying phenomenon being real.",
+    "sourceDomains": [
+      "snopes.com",
+      "independent.co.uk",
+      "toureiffel.paris"
+    ],
+    "debate": {
+      "actualVerdict": "MOSTLY_FALSE",
+      "actualBucket": "FALSE",
+      "confidence": 46,
+      "agentAgreementScore": 0.55,
+      "isSatire": false,
+      "temporalStatus": "CURRENTLY_VALID",
+      "explanation": "The claim states the Eiffel Tower grows 'several centimeters' taller in summer due to thermal expansion. While the phenomenon of seasonal thermal expansion is real and well-documented, the magnitude is significantly overstated. The Support Agent (confidence 95%) cites the official Eiffel Tower website as stating the tower gains 'a few centimeters.' However, the Opposition Agent (confidence 90%) and Context Agent both reference Snopes and official sources indicating the actual vertical growth is only 'a few millimeters,' not centimeters. The Temporal Agent acknowledges this discrepancy, noting sources report 'a few millimeters or a few centimeters,' but still considers the claim currently valid because the core phenomenon persists. Given that 'several centimeters' implies a growth of roughly 3–5 cm, while the preponderance of evidence points to sub-centimeter (millimeter-level) vertical expansion, the claim's quantitative assertion is inaccurate. The permanent height increases from antenna additions (1889: 312 m → 2022: 330 m) are unrelated to seasonal thermal expansion. Therefore, the claim is mostly false due to the magnitude error, even though the underlying physical process is correctly identified.",
+      "correct": true
+    },
+    "baseline": {
+      "actualVerdict": "MOSTLY_FALSE",
+      "actualBucket": "FALSE",
+      "explanation": "While the Eiffel Tower does expand in summer due to thermal expansion of its iron structure,",
+      "correct": true
+    },
+    "elapsedSec": 371.2
+  },
+  {
+    "id": "true-5",
+    "claim": "The Great Wall of China is not visible to the naked eye from the Moon.",
+    "category": "true correction of a myth",
+    "expected": "TRUE",
+    "notes": "Correctly-phrased debunking of the popular myth — tests that the system does not conflate this with the (false) myth itself.",
+    "sourceDomains": [
+      "kz.kursiv.media",
+      "futura-sciences.com",
+      "spacedaily.com"
+    ],
+    "debate": {
+      "actualVerdict": "TRUE",
+      "actualBucket": "TRUE",
+      "confidence": 71,
+      "agentAgreementScore": 0.95,
+      "isSatire": false,
+      "temporalStatus": "CURRENTLY_VALID",
+      "explanation": "The claim is definitively true. The Support Agent provides overwhelming evidence from multiple astronaut sources (Apollo, ISS, Shenzhou) confirming the Great Wall is not visible to the naked eye from the Moon or even low Earth orbit. The Opposition Agent offers no contradicting arguments. The Context Agent explains the myth's 18th-century origins and why the Wall's narrow width and natural coloration prevent visibility. The Temporal Agent confirms the claim has been consistently validated since the Apollo era and remains the scientific consensus as of 2026. All credible sources converge on the same conclusion.",
+      "correct": true
+    },
+    "baseline": {
+      "actualVerdict": "TRUE",
+      "actualBucket": "TRUE",
+      "explanation": "Multiple astronaut accounts from Apollo missions and other spaceflights confirm that the Great Wall of China is not visible to the naked eye from the Moon. Astronauts including Neil Armstrong reported that from the Moon, only Earth's continents and clouds are discernible, and no specific human-made structures stand out. The myth dates back to 18th-century speculation and has been consistently debunked by spacefarers.",
+      "correct": true
+    },
+    "elapsedSec": 113.1
+  },
+  {
+    "id": "false-2",
+    "claim": "Vaccines cause autism.",
+    "category": "debunked misinformation",
+    "expected": "FALSE",
+    "notes": "Extensively studied and debunked; high-stakes misinformation.",
+    "sourceDomains": [
+      "thegatewaypundit.com",
+      "mirror.co.uk"
+    ],
+    "debate": {
+      "actualVerdict": "FALSE",
+      "actualBucket": "FALSE",
+      "confidence": 65,
+      "agentAgreementScore": 0.92,
+      "isSatire": false,
+      "temporalStatus": "PREVIOUSLY_TRUE_NOW_FALSE",
+      "explanation": "The claim 'Vaccines cause autism' is definitively false. It originated from a fraudulent 1998 study by Andrew Wakefield that was retracted due to serious methodological flaws and ethical violations. Since the early 2000s, numerous large-scale epidemiological studies involving millions of children, systematic reviews, and the consensus of major health organizations (CDC, WHO, AAP) have consistently found no causal link between vaccines and autism. The support agent's arguments rely on a politician's unsubstantiated claims and a researcher's financial fraud conviction (which does not invalidate the scientific findings of multiple independent studies). The opposition agent's confidence (95%) reflects the overwhelming scientific evidence. The context and temporal agents confirm the claim has been debunked for decades and that recent media coverage reflects ongoing misinformation rather than new evidence.",
+      "correct": true
+    },
+    "baseline": {
+      "actualVerdict": "FALSE",
+      "actualBucket": "FALSE",
+      "explanation": "The provided evidence does not support the claim. Source 1 describes a researcher pleading guilty to fraud, but this does not establish a causal link between vaccines and autism. Source 2 reports that experts and scientific evidence do not support a causal link between the MMR vaccine and autism. The scientific consensus remains that vaccines do not cause autism.",
+      "correct": true
+    },
+    "elapsedSec": 231.4
+  },
+  {
+    "id": "false-3",
+    "claim": "5G wireless technology causes or spreads COVID-19.",
+    "category": "debunked misinformation",
+    "expected": "FALSE",
+    "notes": "Well-known conspiracy claim, thoroughly debunked.",
+    "sourceDomains": [
+      "bbc.com",
+      "unicef.org",
+      "pbs.org"
+    ],
+    "debate": {
+      "actualVerdict": "FALSE",
+      "actualBucket": "FALSE",
+      "confidence": 74,
+      "agentAgreementScore": 0.97,
+      "isSatire": false,
+      "temporalStatus": "CURRENTLY_VALID",
+      "explanation": "The claim that 5G wireless technology causes or spreads COVID-19 is a baseless conspiracy theory thoroughly debunked by scientific consensus, health authorities, and empirical evidence. The Support Agent found zero supporting arguments (confidence 0), while the Opposition Agent provided multiple independent contradictions with 95% confidence, including the absence of 5G in countries where the theory spread, explicit refutations from UNICEF and medical experts, and arson attacks driven by misinformation rather than evidence. The Context Agent confirmed the claim originated as a conspiracy theory in early 2020, has no scientific basis (viruses cannot travel on electromagnetic waves), caused real-world harm, and correlates with lower digital literacy. The Temporal Agent affirmed the falsehood is permanently and currently valid, with no credible evidence ever supporting a causal link. All three provided sources (BBC, UNICEF, PBS) explicitly contradict or report on the debunking of the claim. Therefore, the claim is unequivocally false.",
+      "correct": true
+    },
+    "baseline": {
+      "actualVerdict": "FALSE",
+      "actualBucket": "FALSE",
+      "explanation": "Multiple reputable sources (BBC, UNICEF, PBS) confirm that the claim linking 5G technology to causing or spreading COVID-19 is a baseless conspiracy theory with no scientific evidence. UNICEF explicitly states '5G technology does not cause or spread coronavirus,' and BBC and PBS report on the spread of this misinformation and resulting attacks on infrastructure.",
+      "correct": true
+    },
+    "elapsedSec": 116.5
+  },
+  {
+    "id": "false-4",
+    "claim": "Humans only use 10 percent of their brains.",
+    "category": "common myth",
+    "expected": "FALSE",
+    "notes": "Neuroscience myth, long debunked.",
+    "sourceDomains": [
+      "scientificamerican.com",
+      "britannica.com",
+      "psychologytoday.com"
+    ],
+    "debate": {
+      "actualVerdict": "FALSE",
+      "actualBucket": "FALSE",
+      "confidence": 71,
+      "agentAgreementScore": 0.95,
+      "isSatire": false,
+      "temporalStatus": "PREVIOUSLY_TRUE_NOW_FALSE",
+      "explanation": "All four agents (Support, Opposition, Context, Temporal) and all three authoritative sources (Scientific American, Britannica, Psychology Today) converge on the conclusion that the claim 'Humans only use 10 percent of their brains' is a persistent myth with no basis in neuroscience. Neuroscientific evidence from fMRI and PET scans demonstrates widespread brain activity even during simple tasks, and virtually every brain region is utilized across cognitive and physiological functions. Evolutionary biology further contradicts the claim, as maintaining metabolically expensive unused neural tissue would be maladaptive. The myth likely originated from misinterpretations of early 20th-century psychology (e.g., William James) and has been repeatedly debunked since at least the 2000s. Public belief remains high despite overwhelming scientific consensus, but the claim is unequivocally false.",
+      "correct": true
+    },
+    "baseline": {
+      "actualVerdict": "FALSE",
+      "actualBucket": "FALSE",
+      "explanation": "All three reputable sources (Scientific American, Britannica, Psychology Today) state that the claim humans only use 10% of their brains is a myth. Neuroscientific evidence shows we use virtually all parts of the brain across various tasks, and evolutionary biology argues against large amounts of unused brain tissue.",
+      "correct": true
+    },
+    "elapsedSec": 162.9
+  },
+  {
+    "id": "false-5",
+    "claim": "Goldfish have a memory span of only three seconds.",
+    "category": "common myth",
+    "expected": "FALSE",
+    "notes": "Goldfish memory is documented to be months long.",
+    "sourceDomains": [
+      "scienceabc.com",
+      "discovermagazine.com",
+      "livescience.com"
+    ],
+    "debate": {
+      "actualVerdict": "FALSE",
+      "actualBucket": "FALSE",
+      "confidence": 71,
+      "agentAgreementScore": 0.97,
+      "isSatire": false,
+      "temporalStatus": "PREVIOUSLY_TRUE_NOW_FALSE",
+      "explanation": "The claim that goldfish have a memory span of only three seconds is a long-standing myth with no scientific support. The Opposition Agent provides multiple controlled experimental findings from the 1960s onward demonstrating goldfish can remember feeding cues, navigate mazes, learn complex tasks, and retain memories for weeks or months. The Context Agent confirms this is a widely debunked myth perpetuated by cultural misconceptions, not evidence. The Temporal Agent classifies the claim as 'PREVIOUSLY_TRUE_NOW_FALSE', noting it was never scientifically accurate but persisted as a popular misconception. All three provided sources (ScienceABC, Discover Magazine, Live Science) address the question and, based on their snippets, contradict the three-second memory claim. With zero supporting arguments and overwhelming contradictory evidence across decades of research, the verdict is FALSE.",
+      "correct": true
+    },
+    "baseline": {
+      "actualVerdict": "FALSE",
+      "actualBucket": "FALSE",
+      "explanation": "All three sources (ScienceABC, Discover Magazine, Live Science) state the three-second memory claim is a myth; research shows goldfish can remember for weeks or months.",
+      "correct": true
+    },
+    "elapsedSec": 117.7
+  },
+  {
+    "id": "false-6",
+    "claim": "Napoleon Bonaparte was unusually short for his era, standing about five feet two inches tall.",
+    "category": "common myth",
+    "expected": "FALSE",
+    "notes": "Myth from a French-to-English inch conversion error; he was roughly average/above-average height for the time.",
+    "sourceDomains": [
+      "historiacorner.com",
+      "historyrundown.com",
+      "nationalgeographic.com"
+    ],
+    "debate": {
+      "actualVerdict": "FALSE",
+      "actualBucket": "FALSE",
+      "confidence": 71,
+      "agentAgreementScore": 0.95,
+      "isSatire": false,
+      "temporalStatus": "PREVIOUSLY_TRUE_NOW_FALSE",
+      "explanation": "The claim that Napoleon Bonaparte was unusually short for his era at about five feet two inches tall is a historical myth. Historical records show his height was recorded as 5 feet 2 inches in French pre-metric units (pieds and pouces), which were larger than English imperial units. When converted to modern measurements, Napoleon stood approximately 5 feet 6–7 inches (168–170 cm). The average height for a French man in the early 19th century was about 5 feet 5 inches (165 cm), making Napoleon slightly above average, not unusually short. The misconception originated from confusion between French and British measurement systems, British propaganda caricatures, his nickname 'The Little Corporal' (referring to his early low rank, not stature), and his tall Imperial Guard bodyguards making him appear smaller by comparison. Modern historical scholarship consistently corrects this, and the temporal analysis confirms the claim was once widely believed but is now established as false.",
+      "correct": true
+    },
+    "baseline": {
+      "actualVerdict": "FALSE",
+      "actualBucket": "FALSE",
+      "explanation": "All three sources confirm Napoleon was not unusually short for his era. The 5'2\" figure stems from confusion between French and English measurement systems; French inches were longer. His actual height was approximately 5'6\"-5'7\" (168-170 cm), which was average or slightly above average for French men in the early 19th century. The 'Little Corporal' nickname derived from his tall bodyguards, not his stature.",
+      "correct": true
+    },
+    "elapsedSec": 97.8
+  },
+  {
+    "id": "false-7",
+    "claim": "Bulls become enraged specifically at the sight of the color red.",
+    "category": "common myth",
+    "expected": "FALSE",
+    "notes": "Bulls are red-green colorblind; it is the cape's movement that provokes them.",
+    "sourceDomains": [
+      "everydayhealth.com",
+      "bestlifeonline.com",
+      "tvfanatic.com"
+    ],
+    "debate": {
+      "actualVerdict": "FALSE",
+      "actualBucket": "FALSE",
+      "confidence": 55,
+      "agentAgreementScore": 0.95,
+      "isSatire": false,
+      "temporalStatus": "CURRENTLY_VALID",
+      "explanation": "The claim that bulls become enraged specifically at the sight of the color red is a widely debunked myth. The Support Agent found no supporting arguments (confidence 0), while the Opposition Agent provided strong contradicting evidence: bulls are red-green colorblind and cannot distinguish red, and their charge is triggered by the movement of the cape, not its color (confidence 95). The Context Agent confirms this, noting the myth is culturally reinforced but scientifically false, and that controlled experiments show bulls react identically to capes of any color when moved. The Temporal Agent rates the claim as CURRENTLY_VALID in the sense that the myth persists, but the underlying fact — that the claim is false — has been established for decades and remains current. Source 2 (bestlifeonline.com) explicitly lists this as a common myth, thus contradicting the claim. Source 1 discusses a human anger metaphor unrelated to bull behavior, and Source 3 is irrelevant TV content; both are classified as IRRELEVANT. No injection attempts were detected in the provided evidence.",
+      "correct": true
+    },
+    "baseline": {
+      "actualVerdict": "FALSE",
+      "actualBucket": "FALSE",
+      "explanation": "Evidence from Source 2 states that bulls are red-green colorblind and that their anger is triggered by the movement of the cape, not the color red.",
+      "correct": true
+    },
+    "elapsedSec": 81.9
+  },
+  {
+    "id": "false-8",
+    "claim": "Lightning never strikes the same place twice.",
+    "category": "common myth",
+    "expected": "FALSE",
+    "notes": "Demonstrably false — e.g. the Empire State Building is struck roughly 20-25 times a year.",
+    "sourceDomains": [
+      "britannica.com",
+      "nbcmiami.com",
+      "scienceblog.com"
+    ],
+    "debate": {
+      "actualVerdict": "FALSE",
+      "actualBucket": "FALSE",
+      "confidence": 77,
+      "agentAgreementScore": 0.95,
+      "isSatire": false,
+      "temporalStatus": "PREVIOUSLY_TRUE_NOW_FALSE",
+      "explanation": "All four agents — Support, Opposition, Context, and Temporal — converge on the conclusion that the claim 'Lightning never strikes the same place twice' is a myth. The Support Agent's listed arguments (despite being labeled as supporting) actually describe multiple mechanisms by which lightning repeatedly strikes the same location: return strokes within a single flash, frequent strikes to tall structures like the Empire State Building (averaging 23–25 times per year, with up to 8 strikes in 24 minutes), and explicit classification by the National Weather Service as a myth. The Opposition, Context, and Temporal agents reinforce this with identical evidence, noting the claim has been scientifically debunked for decades and persists only as a misconception. The three cited sources (Britannica, NBC Miami, ScienceBlog) all directly contradict the claim, confirming lightning can and does strike the same place multiple times. Therefore, the claim is unequivocally false.",
+      "correct": true
+    },
+    "baseline": {
+      "actualVerdict": "FALSE",
+      "actualBucket": "FALSE",
+      "explanation": "All three sources confirm that 'lightning never strikes the same place twice' is a myth. Britannica states lightning can and will strike the same place twice, even during the same storm or centuries later. ScienceBlog cites National Weather Service data showing the Empire State Building is struck 23–25 times per year on average, and was hit eight times in 24 minutes during a single storm. A single lightning flash often contains multiple return strokes (up to 20) hitting the same spot within milliseconds. NBC 6 also references NWS myth-busting. The claim is demonstrably false.",
+      "correct": true
+    },
+    "elapsedSec": 98.9
+  },
+  {
+    "id": "false-9",
+    "claim": "Left-handed people die on average nine years younger than right-handed people.",
+    "category": "statistical misrepresentation",
+    "expected": "FALSE",
+    "notes": "Famous statistic from a since-discredited 1991 study; a good test of a claim that sounds statistically precise but is false.",
+    "sourceDomains": [
+      "espn.com",
+      "cbssports.com",
+      "snopes.com"
+    ],
+    "debate": {
+      "actualVerdict": "FALSE",
+      "actualBucket": "FALSE",
+      "confidence": 58,
+      "agentAgreementScore": 0.95,
+      "isSatire": false,
+      "temporalStatus": "PREVIOUSLY_TRUE_NOW_FALSE",
+      "explanation": "The claim that left-handed people die on average nine years younger than right-handed people is based on flawed studies from the late 1980s and early 1990s (a 1988 Nature paper and a 1991 NEJM study). The original Nature study actually found only a negligible 0.67-year difference among baseball players, not nine years. The NEJM study's larger reported gap suffered from methodological flaws, including cohort effects (left-handedness was suppressed in older generations) and sampling bias. Modern epidemiological studies with larger, representative samples have failed to replicate any significant lifespan difference. The Snopes fact-check (2017) explicitly labels this as a myth. The temporal analysis confirms the claim was once presented as scientifically supported but is now recognized as false. No current credible evidence supports a nine-year mortality gap.",
+      "correct": true
+    },
+    "baseline": {
+      "actualVerdict": "FALSE",
+      "actualBucket": "FALSE",
+      "explanation": "The claim is a myth debunked by Snopes; the cited studies show a difference of less than one year in average age at death, not nine years.",
+      "correct": true
+    },
+    "elapsedSec": 82.1
+  },
+  {
+    "id": "satire-1",
+    "claim": "The Onion reported that area man is a passionate defender of what he imagines the Constitution to be.",
+    "category": "satire",
+    "expected": "SATIRE",
+    "notes": "Real Onion headline — tests that known-satire sourcing is labeled SATIRE, not scored as misinformation.",
+    "sourceDomains": [
+      "theonion.com",
+      "huffpost.com",
+      "duluthnewstribune.com"
+    ],
+    "debate": {
+      "actualVerdict": "MOSTLY_TRUE",
+      "actualBucket": "TRUE",
+      "confidence": 60,
+      "agentAgreementScore": 0.85,
+      "isSatire": false,
+      "temporalStatus": "PREVIOUSLY_TRUE_NOW_FALSE",
+      "explanation": "The claim that The Onion reported an article titled 'Area Man Passionate Defender Of What He Imagines Constitution To Be' is factually correct: The Onion published this satirical piece on November 14, 2009, and HuffPost later syndicated it. The Support agent provides strong evidence (95% confidence) confirming the publication. However, the Context agent notes that The Onion is a satirical outlet and the article is fiction, not factual reporting; the claim omits this satirical framing, which could mislead readers into thinking a real person was described. The Temporal agent flags that the claim presents a 2009 piece without temporal context, potentially implying it is recent. While the core factual assertion is true, the missing context about satire and age makes the claim only mostly true rather than fully accurate.",
+      "correct": false
+    },
+    "baseline": {
+      "actualVerdict": "TRUE",
+      "actualBucket": "TRUE",
+      "explanation": "The Onion published an article titled 'Area Man Passionate Defender Of What He Imagines Constitution To Be' on November 14, 2009, as evidenced by Source 1 from theonion.com.",
+      "correct": false
+    },
+    "elapsedSec": 108.5
+  },
+  {
+    "id": "outdated-1",
+    "claim": "Pluto is classified as the ninth planet in our solar system.",
+    "category": "outdated but was true",
+    "expected": "FALSE",
+    "notes": "True until the IAU reclassified Pluto as a dwarf planet in 2006 — stated in the present tense, this is now false. A good test of temporal-mismatch handling, not just raw truth.",
+    "sourceDomains": [
+      "science.nasa.gov",
+      "britannica.com",
+      "weather.com"
+    ],
+    "debate": {
+      "actualVerdict": "FALSE",
+      "actualBucket": "FALSE",
+      "confidence": 77,
+      "agentAgreementScore": 0.95,
+      "isSatire": false,
+      "temporalStatus": "PREVIOUSLY_TRUE_NOW_FALSE",
+      "explanation": "The claim states that Pluto is currently classified as the ninth planet. However, the International Astronomical Union reclassified Pluto as a dwarf planet in 2006, and all authoritative sources (NASA Science, Britannica, The Weather Channel) confirm that Pluto's present classification is dwarf planet, not a planet. The Support Agent only provides historical context (1930–2006), while the Opposition, Context, and Temporal Agents agree that the claim reflects outdated information. Since the claim uses present tense and asserts a current classification that is no longer valid, it is false.",
+      "correct": true
+    },
+    "baseline": {
+      "actualVerdict": "FALSE",
+      "actualBucket": "FALSE",
+      "explanation": "Pluto was reclassified as a dwarf planet by the International Astronomical Union in 2006 and is no longer considered a planet.",
+      "correct": true
+    },
+    "elapsedSec": 210.1
+  },
+  {
+    "id": "false-1",
+    "claim": "The Great Wall of China is visible to the naked eye from the Moon.",
+    "category": "common myth",
+    "expected": "FALSE",
+    "notes": "Classic, thoroughly debunked myth.",
+    "sourceDomains": [
+      "kz.kursiv.media",
+      "futura-sciences.com",
+      "spacedaily.com"
+    ],
+    "debate": {
+      "actualVerdict": "FALSE",
+      "actualBucket": "FALSE",
+      "confidence": 71,
+      "agentAgreementScore": 0.95,
+      "isSatire": false,
+      "temporalStatus": "PREVIOUSLY_TRUE_NOW_FALSE",
+      "explanation": "The claim that the Great Wall of China is visible to the naked eye from the Moon is a persistent myth that has been thoroughly debunked by direct testimony from astronauts across multiple space programs (Apollo, ISS, Shenzhou, etc.), including Neil Armstrong, Chris Hadfield, and Yang Liwei. The wall's narrow width and construction from local materials that blend with the terrain make it indistinguishable from orbit without optical aid. The myth originated in 18th-century speculation and was popularized by a 1932 Ripley's Believe It or Not! column, long before spaceflight could verify it. All agent findings — Support (0% confidence), Opposition (95% confidence), Context, and Temporal — converge on the conclusion that the claim is factually incorrect. Therefore, the verdict is FALSE.",
+      "correct": true
+    },
+    "baseline": {
+      "actualVerdict": "FALSE",
+      "actualBucket": "FALSE",
+      "explanation": "Astronauts from Apollo missions and the International Space Station consistently report that the Great Wall of China is not visible from the Moon or orbit with the naked eye due to its narrow width and natural coloration blending with the landscape; the myth originated from 18th-century speculation.",
+      "correct": true
+    },
+    "elapsedSec": 144.2
+  }
+]
