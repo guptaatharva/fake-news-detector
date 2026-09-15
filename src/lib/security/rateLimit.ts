@@ -27,7 +27,7 @@ interface Bucket {
   windowStart: number;
 }
 
-class MemoryRateLimitStore implements RateLimitStore {
+export class MemoryRateLimitStore implements RateLimitStore {
   private buckets = new Map<string, Bucket>();
 
   consume(key: string, limit: number, windowMs: number): RateLimitResult {
@@ -48,16 +48,31 @@ class MemoryRateLimitStore implements RateLimitStore {
     bucket.tokens -= 1;
     return { allowed: true, remaining: bucket.tokens, resetAt };
   }
+
+  /** Clears buckets older than maxAgeMs to reclaim memory in long-running processes */
+  sweepStale(maxAgeMs = 30 * 60 * 1000): number {
+    const now = Date.now();
+    let swept = 0;
+    for (const [key, bucket] of this.buckets.entries()) {
+      if (now - bucket.windowStart > maxAgeMs) {
+        this.buckets.delete(key);
+        swept++;
+      }
+    }
+    return swept;
+  }
+
+  /** For test assertions */
+  get size(): number {
+    return this.buckets.size;
+  }
 }
 
 // Periodically sweep stale buckets so long-running processes don't leak memory.
 const store = new MemoryRateLimitStore();
-const allStores: MemoryRateLimitStore[] = [store];
 if (typeof setInterval !== 'undefined') {
   setInterval(() => {
-    // Buckets self-expire on next access; nothing to actively purge given
-    // the Map is keyed per (route, identity) with a bounded cardinality in
-    // practice. Left as an explicit no-op hook for a future shared store.
+    store.sweepStale();
   }, 10 * 60 * 1000).unref?.();
 }
 

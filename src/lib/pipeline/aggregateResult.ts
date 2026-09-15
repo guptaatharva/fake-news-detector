@@ -15,6 +15,7 @@ import {
   describeConfidenceBreakdown,
   type ConfidenceFactors,
 } from "@/lib/confidence";
+import { hasLowPublisherDiversity } from "@/lib/mediaOwnership";
 
 interface ClaimWithFactors extends Claim {
   confidenceFactors?: ConfidenceFactors;
@@ -34,7 +35,7 @@ export function aggregateResult(
   const overallFactors = aggregateConfidenceFactors(factorsList);
   const overallBreakdown = calculateDeterministicConfidence(overallFactors);
 
-  const lowSourceDiversity = successfulDomains.size < 2;
+  const lowSourceDiversity = hasLowPublisherDiversity(allScrapedSources.map((s) => s.domain).filter(Boolean));
   if (lowSourceDiversity && overallBreakdown.totalConfidence > 55) {
     overallBreakdown.totalConfidence = 55;
   }

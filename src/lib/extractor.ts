@@ -6,8 +6,41 @@ import { isScrapingAllowed } from './security/robots';
 import { acquirePage } from './puppeteerPool';
 
 // ---------------------------------------------------------------------------
-// Types
+// Types & Error Classes
 // ---------------------------------------------------------------------------
+
+export type ScraperErrorCode =
+  | 'DNS_FAILURE'
+  | 'NETWORK_FAILURE'
+  | 'TIMEOUT'
+  | 'HTTP_403'
+  | 'HTTP_429'
+  | 'HTTP_404'
+  | 'HTTP_5XX'
+  | 'PAYWALL'
+  | 'LOGIN_REQUIRED'
+  | 'EMPTY_CONTENT'
+  | 'PARSER_FAILURE'
+  | 'ROBOTS_BLOCKED'
+  | 'SSRF_BLOCKED'
+  | 'INVALID_URL';
+
+export class ScraperError extends Error {
+  public readonly code: ScraperErrorCode;
+  public readonly httpStatus: number | null;
+  public readonly userMessage: string;
+
+  constructor(code: ScraperErrorCode, userMessage: string, httpStatus: number | null = null, internalDetail?: string) {
+    super(userMessage);
+    this.name = 'ScraperError';
+    this.code = code;
+    this.httpStatus = httpStatus;
+    this.userMessage = userMessage;
+    if (internalDetail) {
+      this.cause = internalDetail;
+    }
+  }
+}
 
 export interface ExtractionResult {
   /** The cleaned article text */
@@ -41,6 +74,7 @@ export interface ExtractionDiagnostics {
   tiersAttempted: string[];
   robotsBlocked: boolean;
   error: string | null;
+  errorCode?: ScraperErrorCode | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -221,6 +255,11 @@ export async function extractTextFromUrl(url: string): Promise<string> {
   }
 
   if (!result.qualityOk && result.text.length < MIN_QUALITY_LENGTH) {
+    // Surface the real underlying error (e.g. DNS failure, SSRF block) instead
+    // of silently burying it under a generic "paywall / login" message.
+    if (result.diagnostics.error) {
+      throw new Error(result.diagnostics.error);
+    }
     if (result.paywalled) {
       throw new Error('This page appears to be paywalled — its full article content could not be read.');
     }

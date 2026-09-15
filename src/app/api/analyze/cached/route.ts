@@ -90,10 +90,7 @@ export async function GET(req: NextRequest) {
         temporalStatus: claim.temporalStatus ?? undefined,
         temporalAnalysis: claim.temporalAnalysis ?? undefined,
         agentAgreementScore: claim.agentAgreementScore ?? undefined,
-        // Per-claim confidence isn't persisted (Claim has no confidence
-        // column) — approximate with the overall analysis score rather than
-        // showing a misleading 0%. Flagged via `approximateConfidence` below.
-        confidence: analysis.confidence,
+        confidence: claim.confidence ?? analysis.confidence,
         evidence,
       };
     });

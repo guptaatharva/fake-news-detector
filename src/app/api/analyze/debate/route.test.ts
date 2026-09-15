@@ -122,6 +122,43 @@ describe('POST /api/analyze/debate', () => {
     expect(json.confidence).toBeLessThanOrEqual(55);
   });
 
+  it('caps confidence and flags lowSourceDiversity when multiple domains belong to the same conglomerate', async () => {
+    mockAgentsFor('TRUE', 0.95, [
+      { sourceUrl: 'https://timesofindia.indiatimes.com/story', stance: 'SUPPORTS' },
+      { sourceUrl: 'https://economictimes.indiatimes.com/story', stance: 'SUPPORTS' },
+    ]);
+
+    const { POST } = await import('./route');
+    const res = await POST(
+      makeRequest({
+        claim: 'Market hit record highs today.',
+        evidence: [
+          {
+            sourceUrl: 'https://timesofindia.indiatimes.com/story',
+            domain: 'timesofindia.indiatimes.com',
+            title: 'Sensex surges',
+            snippet: 'Markets rallied today.',
+            content: 'Detailed reporting on record highs.',
+            publishedAt: new Date().toISOString(),
+          },
+          {
+            sourceUrl: 'https://economictimes.indiatimes.com/story',
+            domain: 'economictimes.indiatimes.com',
+            title: 'Economic boom continues',
+            snippet: 'Markets rallied today.',
+            content: 'Detailed financial reporting.',
+            publishedAt: new Date().toISOString(),
+          },
+        ],
+      }),
+    );
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    // Both domains belong to times-group, so true diversity is 1
+    expect(json.lowSourceDiversity).toBe(true);
+    expect(json.confidence).toBeLessThanOrEqual(55);
+  });
+
   it('labels a claim from a known satire domain as SATIRE regardless of the judge verdict', async () => {
     mockAgentsFor('FALSE', 0.8);
 

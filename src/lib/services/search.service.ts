@@ -1,4 +1,5 @@
 import * as cheerio from 'cheerio';
+import { assertSafeUrl } from '../security/ssrf';
 
 export interface SearchResult {
   title: string;
@@ -121,33 +122,79 @@ export class SearchService {
       // Log and proceed to fallback
     }
 
-    // Tier 2: HTTP redirect following fallback
+    // Tier 2: HTTP redirect following fallback with per-hop SSRF validation
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 6000);
+      let currentUrl = googleNewsUrl;
+      let finalResolvedUrl: string | null = null;
+      const MAX_REDIRECTS = 5;
 
-      const res = await fetch(googleNewsUrl, {
-        signal: controller.signal,
-        redirect: 'follow',
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        },
-      });
-      clearTimeout(timeout);
+      for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+        try {
+          await assertSafeUrl(currentUrl);
+        } catch {
+          console.warn(`[Search] Blocked unsafe URL in Google News redirect chain: ${currentUrl}`);
+          break;
+        }
 
-      if (res.url && res.url.startsWith('http') && !res.url.includes('news.google.com')) {
-        console.log(`[Search] Resolved publisher URL: ${res.url}`);
-        return res.url;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 6000);
+
+        let res: Response;
+        try {
+          res = await fetch(currentUrl, {
+            signal: controller.signal,
+            redirect: 'manual',
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            },
+          });
+        } finally {
+          clearTimeout(timeout);
+        }
+
+        const isRedirect = res.status >= 300 && res.status < 400;
+        if (isRedirect) {
+          const location = res.headers.get('location');
+          if (!location) break;
+          const nextUrl = new URL(location, currentUrl).toString();
+          currentUrl = nextUrl;
+          if (nextUrl.startsWith('http') && !nextUrl.includes('news.google.com')) {
+            try {
+              await assertSafeUrl(nextUrl);
+              finalResolvedUrl = nextUrl;
+            } catch {
+              console.warn(`[Search] Blocked unsafe redirect target: ${nextUrl}`);
+            }
+            break;
+          }
+          continue;
+        }
+
+        // If landing URL is non-redirect and non-Google
+        if (currentUrl.startsWith('http') && !currentUrl.includes('news.google.com')) {
+          finalResolvedUrl = currentUrl;
+          break;
+        }
+
+        // Check for canonical or og:url meta tags in the response HTML
+        const html = await res.text();
+        const $ = cheerio.load(html);
+        const canonical = $('link[rel="canonical"]').attr('href') || $('meta[property="og:url"]').attr('content');
+        if (canonical && canonical.startsWith('http') && !canonical.includes('news.google.com')) {
+          try {
+            await assertSafeUrl(canonical);
+            finalResolvedUrl = canonical;
+          } catch {
+            console.warn(`[Search] Blocked unsafe canonical target: ${canonical}`);
+          }
+        }
+        break;
       }
 
-      // Check for canonical or og:url meta tags in the response HTML
-      const html = await res.text();
-      const $ = cheerio.load(html);
-      const canonical = $('link[rel="canonical"]').attr('href') || $('meta[property="og:url"]').attr('content');
-      if (canonical && canonical.startsWith('http') && !canonical.includes('news.google.com')) {
-        console.log(`[Search] Resolved publisher URL: ${canonical}`);
-        return canonical;
+      if (finalResolvedUrl) {
+        console.log(`[Search] Resolved publisher URL: ${finalResolvedUrl}`);
+        return finalResolvedUrl;
       }
     } catch (e: any) {
       // Fallback failed

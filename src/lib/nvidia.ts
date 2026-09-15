@@ -8,6 +8,75 @@ import type { z } from 'zod';
 const NVIDIA_MODEL = 'nvidia/nemotron-3-ultra-550b-a55b';
 const NVIDIA_BASE_URL = 'https://integrate.api.nvidia.com/v1';
 
+// ---------------------------------------------------------------------------
+// Provider Concurrency & Rate Limit Management
+// ---------------------------------------------------------------------------
+
+class NvidiaConcurrencyLimiter {
+  private activeCount = 0;
+  private maxConcurrency: number;
+  private queue: Array<() => void> = [];
+  private rateLimitCooldownUntil = 0;
+
+  constructor(maxConcurrency = 2) {
+    this.maxConcurrency = maxConcurrency;
+  }
+
+  public setRateLimitCooldown(durationMs: number) {
+    this.rateLimitCooldownUntil = Math.max(this.rateLimitCooldownUntil, Date.now() + durationMs);
+  }
+
+  public async acquire(signal?: AbortSignal): Promise<() => void> {
+    const now = Date.now();
+    if (this.rateLimitCooldownUntil > now) {
+      const waitMs = this.rateLimitCooldownUntil - now + Math.floor(Math.random() * 600);
+      await new Promise<void>((resolve, reject) => {
+        if (signal?.aborted) return reject(new NvidiaError('Request aborted.', 499));
+        const timer = setTimeout(resolve, waitMs);
+        signal?.addEventListener(
+          'abort',
+          () => {
+            clearTimeout(timer);
+            reject(new NvidiaError('Request aborted.', 499));
+          },
+          { once: true },
+        );
+      });
+    }
+
+    if (this.activeCount < this.maxConcurrency) {
+      this.activeCount++;
+      return () => this.release();
+    }
+
+    return new Promise<() => void>((resolve, reject) => {
+      if (signal?.aborted) return reject(new NvidiaError('Request aborted.', 499));
+      const onAbort = () => {
+        const idx = this.queue.indexOf(dispatch);
+        if (idx !== -1) this.queue.splice(idx, 1);
+        reject(new NvidiaError('Request aborted.', 499));
+      };
+      const dispatch = () => {
+        signal?.removeEventListener('abort', onAbort);
+        this.activeCount++;
+        resolve(() => this.release());
+      };
+      this.queue.push(dispatch);
+      signal?.addEventListener('abort', onAbort, { once: true });
+    });
+  }
+
+  private release() {
+    this.activeCount = Math.max(0, this.activeCount - 1);
+    if (this.queue.length > 0 && this.activeCount < this.maxConcurrency) {
+      const next = this.queue.shift();
+      if (next) next();
+    }
+  }
+}
+
+const nvidiaLimiter = new NvidiaConcurrencyLimiter(2);
+
 function getNvidiaClient(): OpenAI {
   const apiKey = process.env.NVIDIA_API_KEY;
   if (!apiKey) {
@@ -612,11 +681,13 @@ export async function nvidiaGenerateObject<T extends z.ZodType>(
   async function executeWithRetry(
     userContent: string,
     stageLabel: string,
-    maxAttempts = 3,
+    maxAttempts = 4,
   ): Promise<CompletionResult> {
     let lastError: any;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      let release: (() => void) | null = null;
       try {
+        release = await nvidiaLimiter.acquire(abortSignal);
         return await callNvidia(userContent);
       } catch (rawError: any) {
         lastError = rawError;
@@ -624,7 +695,16 @@ export async function nvidiaGenerateObject<T extends z.ZodType>(
         const duration = Date.now() - startTime;
 
         if (classified.retryable && attempt < maxAttempts && !abortSignal?.aborted) {
-          const backoffMs = attempt * 2000;
+          const isRateLimit = classified.statusCode === 429;
+          // Exponential backoff with random jitter to break synchronized thundering-herd retries
+          const baseBackoff = isRateLimit ? 3000 * Math.pow(1.6, attempt - 1) : attempt * 2000;
+          const jitter = Math.floor(Math.random() * 1500);
+          const backoffMs = Math.round(baseBackoff + jitter);
+
+          if (isRateLimit) {
+            nvidiaLimiter.setRateLimitCooldown(backoffMs);
+          }
+
           console.warn(
             `${label} [${stageLabel}] Attempt ${attempt}/${maxAttempts} failed with retryable error (${classified.message}). Retrying in ${backoffMs}ms...`,
           );
@@ -636,6 +716,8 @@ export async function nvidiaGenerateObject<T extends z.ZodType>(
           `${label} [${stageLabel}] Request failed after ${duration}ms: ${classified.message}`,
         );
         throw new NvidiaError(classified.message, classified.statusCode);
+      } finally {
+        if (release) release();
       }
     }
     const classified = classifyNvidiaError(lastError);
@@ -643,7 +725,7 @@ export async function nvidiaGenerateObject<T extends z.ZodType>(
   }
 
   // ── Attempt 1 ──────────────────────────────────────────────────────────────
-  const result1 = await executeWithRetry(prompt, 'Initial', 3);
+  const result1 = await executeWithRetry(prompt, 'Initial', 4);
 
   // Log diagnostic metadata for Attempt 1
   const diag1 = logDiagnostics(label, result1);

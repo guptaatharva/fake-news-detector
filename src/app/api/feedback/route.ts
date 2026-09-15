@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthedUser } from '@/lib/auth/requireUser';
+import { validateSameOrigin } from '@/lib/security/csrf';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +17,9 @@ const CreateSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const csrf = validateSameOrigin(req);
+  if (!csrf.ok) return csrf.response!;
+
   const user = await getAuthedUser();
   if (!user) return NextResponse.json({ error: 'You must be signed in to submit feedback.' }, { status: 401 });
 
@@ -24,7 +28,9 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 });
 
   const analysis = await prisma.analysis.findUnique({ where: { id: parsed.data.analysisId } });
-  if (!analysis) return NextResponse.json({ error: 'Analysis not found.' }, { status: 404 });
+  if (!analysis || (!analysis.isPublic && analysis.userId !== user.id)) {
+    return NextResponse.json({ error: 'Analysis not found.' }, { status: 404 });
+  }
 
   const feedback = await prisma.feedback.create({
     data: {

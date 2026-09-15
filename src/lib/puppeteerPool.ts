@@ -33,7 +33,6 @@ async function launchBrowser(): Promise<Browser> {
       '--no-first-run',
       '--mute-audio',
       '--hide-scrollbars',
-      '--ignore-certificate-errors',
     ],
   });
   useCount = 0;

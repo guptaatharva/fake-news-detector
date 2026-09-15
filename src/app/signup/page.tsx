@@ -12,8 +12,8 @@ import { createClient } from "@/lib/supabase/client";
 function SignUpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const rawNext = searchParams.get("next") || "/";
-  const next = rawNext.startsWith("/dashboard") ? "/" : rawNext;
+  const rawNext = searchParams.get("next") || "/dashboard";
+  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/dashboard";
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");

@@ -81,12 +81,15 @@ model Claim {
   agentAgreementScore Float?
   temporalStatus      String?
   temporalAnalysis    String?
+  confidence          Float?
   evidence            Evidence[]
 
   sourceRelations ClaimRelationship[] @relation("SourceClaim")
   targetRelations ClaimRelationship[] @relation("TargetClaim")
 
   analysis Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId])
 }
 
 model Source {
@@ -119,6 +122,8 @@ model Evidence {
 
   claim  Claim   @relation(fields: [claimId], references: [id], onDelete: Cascade)
   source Source? @relation(fields: [sourceId], references: [id])
+
+  @@index([claimId])
 }
 
 model ClaimRelationship {

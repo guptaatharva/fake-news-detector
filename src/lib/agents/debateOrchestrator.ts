@@ -18,6 +18,7 @@ import { evaluateDomainCredibility, type DomainCredibilityResult } from '../cred
 import { calculateDeterministicConfidence, computeRecencyScore, type ConfidenceBreakdown, type ConfidenceFactors } from '../confidence';
 import { isSatireDomain } from '../satire';
 import { scanEvidenceForInjection } from '../promptSafety';
+import { hasLowPublisherDiversity } from '../mediaOwnership';
 
 export interface DebateEvidenceInput {
   sourceUrl: string;
@@ -107,9 +108,16 @@ export async function runClaimDebate(input: DebateClaimInput): Promise<DebateCla
 
   const injectionScan = scanEvidenceForInjection(evidence.map((e) => ({ url: e.sourceUrl, text: e.content })));
 
-  const [support, opposition, context, temporal] = await Promise.all([
+  // Run sub-agents in 2 paired batches (Support & Opposition, then Context & Temporal)
+  // rather than firing 4 heavy LLM calls in one simultaneous burst. This prevents
+  // instant 429 rate-limit exhaustion on constrained provider tiers while keeping
+  // claim debate fast.
+  const [support, opposition] = await Promise.all([
     runSupportAgent(claim, evidenceContext, currentDate),
     runOppositionAgent(claim, evidenceContext, currentDate),
+  ]);
+
+  const [context, temporal] = await Promise.all([
     runContextAgent(claim, evidenceContext, currentDate),
     runTemporalAgent(claim, evidenceContext, currentDate),
   ]);
@@ -149,7 +157,7 @@ export async function runClaimDebate(input: DebateClaimInput): Promise<DebateCla
   });
 
   const independentDomains = new Set(evidence.map((e) => e.domain));
-  const lowSourceDiversity = independentDomains.size < 2;
+  const lowSourceDiversity = hasLowPublisherDiversity(evidence.map((e) => e.domain));
   const dominantSatire = evidence.length > 0 && evidence.every((e) => isSatireDomain(e.domain));
 
   // --- Deterministic confidence ---

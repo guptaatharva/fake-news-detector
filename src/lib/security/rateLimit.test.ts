@@ -29,4 +29,21 @@ describe('checkRateLimit', () => {
     const other = checkRateLimit({ scope: 'scope-y', identity: 'shared-user', limit: 1, windowMs: 60_000 });
     expect(other.allowed).toBe(true);
   });
+
+  it('sweeps stale buckets correctly', async () => {
+    const { MemoryRateLimitStore } = await import('./rateLimit');
+    const customStore = new MemoryRateLimitStore();
+    customStore.consume('test-key', 5, 1000);
+    expect(customStore.size).toBe(1);
+
+    // Should not sweep recently created bucket
+    const swept1 = customStore.sweepStale(5000);
+    expect(swept1).toBe(0);
+    expect(customStore.size).toBe(1);
+
+    // Sweeping with negative/zero max age should sweep it
+    const swept2 = customStore.sweepStale(-1);
+    expect(swept2).toBe(1);
+    expect(customStore.size).toBe(0);
+  });
 });

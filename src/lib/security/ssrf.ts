@@ -118,7 +118,7 @@ export async function assertSafeUrl(rawUrl: string): Promise<SafeUrlResult> {
     return { url, resolvedIps: [hostname] };
   }
 
-  let records: string[];
+  let records: string[] = [];
   try {
     const [v4, v6] = await Promise.allSettled([dns.resolve4(hostname), dns.resolve6(hostname)]);
     records = [
@@ -127,6 +127,20 @@ export async function assertSafeUrl(rawUrl: string): Promise<SafeUrlResult> {
     ];
   } catch {
     records = [];
+  }
+
+  // If c-ares direct resolution failed or returned empty (common on Windows, VPNs,
+  // or environments where raw UDP port 53 is blocked/firewalled), fall back to
+  // OS-level resolution via dns.lookup (which uses getaddrinfo).
+  if (records.length === 0 && typeof (dns as any).lookup === 'function') {
+    try {
+      const lookupResults = await (dns as any).lookup(hostname, { all: true });
+      if (Array.isArray(lookupResults)) {
+        records = Array.from(new Set(lookupResults.map((r: { address: string }) => r.address)));
+      }
+    } catch {
+      records = [];
+    }
   }
 
   if (records.length === 0) {

@@ -2,27 +2,21 @@ name: CI
 
 on:
   push:
-    branches: [main, staging]
+    branches: [main, master, staging]
   pull_request:
-    branches: [main, staging]
+    branches: [main, master, staging]
 
 jobs:
-  lint-typecheck-test:
+  validate:
+    name: Lint, Typecheck & Test
     runs-on: ubuntu-latest
-    env:
-      # Dummy values so prisma generate / route modules that read env at
-      # import time don't crash the build — no real network calls happen
-      # during lint/typecheck/unit tests.
-      DATABASE_URL: "postgresql://user:pass@localhost:5432/db"
-      DIRECT_URL: "postgresql://user:pass@localhost:5432/db"
-      NVIDIA_API_KEY: "ci-placeholder"
-      GNEWS_API_KEY: "ci-placeholder"
-      NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co"
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: "ci-placeholder"
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
@@ -30,17 +24,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Generate Prisma client
+      - name: Generate Prisma Client
         run: npx prisma generate
 
-      - name: Lint
+      - name: Run ESLint
         run: npm run lint
 
-      - name: Type check
+      - name: Run TypeScript typecheck
         run: npm run typecheck
 
-      - name: Unit tests
-        run: npm test
+      - name: Run Vitest test suite
+        run: npm run test
 
-      - name: Build
+      - name: Build Next.js application
         run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://mock.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'mock-anon-key' }}

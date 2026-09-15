@@ -1,15 +1,70 @@
 export const dynamic = 'force-dynamic';
 import crypto from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { createClient } from '@/lib/supabase/server';
 import { normalizeUrlForDedup } from '@/lib/normalizeUrl';
+import { validateSameOrigin } from '@/lib/security/csrf';
 
 function makePublicSlug(): string {
   return crypto.randomBytes(9).toString('base64url');
 }
 
+const EvidenceInputSchema = z.object({
+  sourceUrl: z.string().optional(),
+  url: z.string().optional(),
+  title: z.string().optional(),
+  snippet: z.string().optional(),
+  fullText: z.string().optional().nullable(),
+  domain: z.string().optional().nullable(),
+  publishedAt: z.string().optional().nullable(),
+  stance: z.string().optional().nullable(),
+  credibility: z.string().optional().nullable(),
+  credibilityScore: z.number().optional().nullable(),
+  isSatire: z.boolean().optional().nullable(),
+});
+
+const ClaimInputSchema = z.object({
+  claimText: z.string().optional(),
+  text: z.string().optional(),
+  verdict: z.string().optional(),
+  explanation: z.string().optional().nullable(),
+  agentAgreementScore: z.number().optional().nullable(),
+  temporalStatus: z.string().optional().nullable(),
+  temporalAnalysis: z.string().optional().nullable(),
+  confidence: z.number().optional().nullable(),
+  evidence: z.array(EvidenceInputSchema).optional(),
+});
+
+const ResultInputSchema = z.object({
+  verdict: z.string().min(1),
+  confidenceScore: z.union([z.number(), z.string()]).transform((v) => Number(v) || 0),
+  scoreBreakdown: z.string().optional().nullable(),
+  confidenceFactors: z.record(z.any()).optional().nullable(),
+  lowSourceDiversity: z.boolean().optional().nullable(),
+  summary: z.string().optional().nullable(),
+  claims: z.array(ClaimInputSchema).optional(),
+});
+
+const SaveAnalysisSchema = z.object({
+  sourceUrl: z.string().optional().nullable(),
+  textContent: z.string().optional().nullable(),
+  result: ResultInputSchema,
+  previousVersionId: z.string().optional().nullable(),
+  makePublic: z.boolean().optional().nullable(),
+});
+
+function parseSafeDate(dateStr?: string | null): Date | null {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 export async function POST(req: NextRequest) {
+  const csrf = validateSameOrigin(req);
+  if (!csrf.ok) return csrf.response!;
+
   try {
     const supabase = await createClient();
     const {
@@ -31,8 +86,20 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const body = await req.json();
-    const { sourceUrl, textContent, result, previousVersionId, makePublic } = body;
+    const rawBody = await req.json().catch(() => null);
+    if (!rawBody) {
+      return NextResponse.json({ error: 'Missing or malformed JSON body.' }, { status: 400 });
+    }
+
+    const parsed = SaveAnalysisSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid analysis payload.', details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+
+    const { sourceUrl, textContent, result, previousVersionId, makePublic } = parsed.data;
 
     // Every domain that contributed at least one piece of evidence to any claim.
     const allDomains = new Set<string>();
@@ -69,13 +136,14 @@ export async function POST(req: NextRequest) {
             agentAgreementScore: typeof claim.agentAgreementScore === 'number' ? claim.agentAgreementScore : null,
             temporalStatus: claim.temporalStatus || null,
             temporalAnalysis: claim.temporalAnalysis || null,
+            confidence: typeof claim.confidence === 'number' ? claim.confidence : null,
             evidence: {
               create: (claim.evidence || []).map((ev: any) => ({
                 sourceUrl: ev.sourceUrl || ev.url || '',
                 title: ev.title || 'Source Reference',
                 snippet: ev.snippet || '',
                 fullText: ev.fullText || null,
-                publishedAt: ev.publishedAt ? new Date(ev.publishedAt) : null,
+                publishedAt: parseSafeDate(ev.publishedAt),
                 stance: ev.stance || null,
                 credibility: ev.credibility || 'HIGH',
                 credibilityScore: typeof ev.credibilityScore === 'number' ? ev.credibilityScore : null,
@@ -105,10 +173,25 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(analysis);
   } catch (error: any) {
-    console.error('[Save Analysis API] Database error:', error?.message || error);
+    const isAuthError =
+      error?.code === 'P1000' ||
+      (typeof error?.message === 'string' && error.message.includes('Authentication failed'));
+
+    if (isAuthError) {
+      console.error(
+        '[Save Analysis API] Database authentication failed (Prisma P1000). Please check and update your DATABASE_URL / DIRECT_URL credentials in .env.local.',
+      );
+    } else {
+      console.error('[Save Analysis API] Database error:', error?.message || error);
+    }
+
     return NextResponse.json(
-      { error: 'Could not save analysis to database history at this time.' },
-      { status: 503 }
+      {
+        error: isAuthError
+          ? 'Database authentication failed. Verify database credentials in .env.local.'
+          : 'Could not save analysis to database history at this time.',
+      },
+      { status: 503 },
     );
   }
 }
