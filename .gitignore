@@ -43,3 +43,7 @@ next-env.d.ts
 
 # ocr models
 eng.traineddata
+
+
+#report
+VERACIUS_AI_FINAL_PROJECT_REPORT.md

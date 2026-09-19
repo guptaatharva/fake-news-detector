@@ -105,34 +105,6 @@ export default function AboutPage() {
         </RevealOnScroll>
       </section>
 
-      {/* Demo Video Section */}
-      <section className="relative py-24 bg-transparent overflow-hidden">
-        <div className="mx-auto max-w-6xl px-6 relative z-10">
-          <RevealOnScroll className="text-center space-y-3 mb-12">
-            <span className="font-mono text-xs text-neonRed font-bold uppercase tracking-widest">
-              LIVE SYSTEM DEMONSTRATION
-            </span>
-            <h2 className="font-display text-3xl sm:text-5xl font-bold text-foreground">
-              Watch VeraCius In Action
-            </h2>
-            <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
-              See how claims are parsed, scraped, and cross-referenced in real-time.
-            </p>
-          </RevealOnScroll>
-
-          <RevealOnScroll delay={0.2} className="rounded-3xl overflow-hidden border border-graphite-border bg-graphite-surface shadow-2xl shadow-neonRed/10">
-            <video
-              controls
-              poster="/vidback.png"
-              className="w-full h-auto"
-            >
-              <source src="/VeraCius AI.mp4" type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-          </RevealOnScroll>
-        </div>
-      </section>
-
       {/* 6-Step Storytelling Section */}
       <section id="pipeline" className="relative py-28 bg-transparent overflow-hidden">
         {/* Smooth dark red/black gradient transition at the top and bottom */}
